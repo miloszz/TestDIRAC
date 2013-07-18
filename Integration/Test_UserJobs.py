@@ -6,40 +6,33 @@
 from DIRAC.Core.Base.Script import parseCommandLine
 parseCommandLine()
 
-import os.path
 import unittest
 
-from TestDIRAC.Utils.Utils import cleanTestDir
+from TestDIRAC.Utilities.IntegrationTest import IntegrationTest
+from TestDIRAC.Utilities.utils import find_all
 
-from DIRAC import gLogger
 from DIRAC.Interfaces.API.Job import Job
 from DIRAC.Interfaces.API.Dirac import Dirac
 
-gLogger.setLevel( 'DEBUG' )
-
-cwd = os.path.realpath( '.' )
-
-class UserJobTestCase( unittest.TestCase ):
+class UserJobTestCase( IntegrationTest ):
   """ Base class for the UserJob test cases
   """
   def setUp( self ):
-    cleanTestDir()
+    super( IntegrationTest, self ).setUp()
 
-    gLogger.setLevel( 'DEBUG' )
-    self.dirac = Dirac()
-
+    self.d = Dirac()
+    self.exeScriptLocation = find_all( 'exe-script.py', '.', 'Integration' )[0]
 
 class HelloWorldSuccess( UserJobTestCase ):
-  """ Simplest ever. helloWorld.py just calls 'echo'
-  """
   def test_execute( self ):
 
-    job = Job()
+    j = Job()
 
-    job.setName( "helloWorld-test" )
-    job.setExecutable( "helloWorld.py" )
-    res = job.runLocal( self.dirac )
+    j.setName( "helloWorld-test" )
+    j.setExecutable( self.exeScriptLocation )
+    res = j.runLocal( self.dLHCb )
     self.assertTrue( res['OK'] )
+
 
 class HelloWorldPlusSuccess( UserJobTestCase ):
   """ Adding quite a lot of calls from the API, for pure test purpose
@@ -65,21 +58,22 @@ class HelloWorldPlusSuccess( UserJobTestCase ):
     self.assertTrue( res['OK'] )
 
 
-# class CatSuccess( UserJobTestCase ):
-#  def test_execute( self ):
-#
-#    job = Job()
-#
-#    job.setName( "cat-test" )
-#    job.setExecutable( "cat.py" )
-#    job.set
-#    res = job.runLocal( self.dirac )
-#    self.assertTrue( res['OK'] )
+class CatSuccess( UserJobTestCase ):
+  def test_execute( self ):
+
+    job = Job()
+
+    job.setName( "cat-test" )
+    job.setExecutable( "/bin/cat", "testFile1.txt testFile2.txt" )
+    job.setInputSandbox( ['testFile1.txt', 'testFile2.txt'] )
+    res = job.runLocal( self.dirac )
+    self.assertTrue( res['OK'] )
 
 
 if __name__ == '__main__':
   suite = unittest.defaultTestLoader.loadTestsFromTestCase( UserJobTestCase )
-  suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( HelloWorldSuccess ) )
-  suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( HelloWorldPlusSuccess ) )
+#  suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( HelloWorldSuccess ) )
+#  suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( HelloWorldPlusSuccess ) )
+  suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( CatSuccess ) )
   testResult = unittest.TextTestRunner( verbosity = 2 ).run( suite )
 
