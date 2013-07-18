@@ -30,7 +30,7 @@ class HelloWorldSuccess( UserJobTestCase ):
 
     j.setName( "helloWorld-test" )
     j.setExecutable( self.exeScriptLocation )
-    res = j.runLocal( self.dLHCb )
+    res = j.runLocal( self.d )
     self.assertTrue( res['OK'] )
 
 
@@ -43,7 +43,9 @@ class HelloWorldPlusSuccess( UserJobTestCase ):
     job = Job()
 
     job.setName( "helloWorld-test" )
-    job.setExecutable( "helloWorld.py", arguments = "This is an argument", logFile = "aLogFileForTest.txt" )
+    job.setExecutable( find_all( "helloWorld.py", '.', 'Integration' )[0],
+                       arguments = "This is an argument",
+                       logFile = "aLogFileForTest.txt" )
     job.setBannedSites( ['LCG.SiteA.com', 'DIRAC.SiteB.org'] )
     job.setOwner( 'ownerName' )
     job.setOwnerGroup( 'ownerGroup' )
@@ -54,26 +56,25 @@ class HelloWorldPlusSuccess( UserJobTestCase ):
     job.setCPUTime( 12345 )
     job.setLogLevel( 'DEBUG' )
 
-    res = job.runLocal( self.dirac )
+    res = job.runLocal( self.d )
     self.assertTrue( res['OK'] )
 
 
-class CatSuccess( UserJobTestCase ):
+class LSSuccess( UserJobTestCase ):
   def test_execute( self ):
 
     job = Job()
 
-    job.setName( "cat-test" )
-    job.setExecutable( "/bin/cat", "testFile1.txt testFile2.txt" )
-    job.setInputSandbox( ['testFile1.txt', 'testFile2.txt'] )
-    res = job.runLocal( self.dirac )
+    job.setName( "ls-test" )
+    job.setExecutable( "/bin/ls", '-l' )
+    res = job.runLocal( self.d )
     self.assertTrue( res['OK'] )
 
 
 if __name__ == '__main__':
   suite = unittest.defaultTestLoader.loadTestsFromTestCase( UserJobTestCase )
-#  suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( HelloWorldSuccess ) )
-#  suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( HelloWorldPlusSuccess ) )
-  suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( CatSuccess ) )
+  suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( HelloWorldSuccess ) )
+  suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( HelloWorldPlusSuccess ) )
+  suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( LSSuccess ) )
   testResult = unittest.TextTestRunner( verbosity = 2 ).run( suite )
 
