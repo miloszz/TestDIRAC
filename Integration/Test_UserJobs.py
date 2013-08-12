@@ -45,7 +45,12 @@ class HelloWorldPlusSuccess( UserJobTestCase ):
     job.setName( "helloWorld-test" )
     job.setExecutable( find_all( "helloWorld.py", '.', 'Integration' )[0],
                        arguments = "This is an argument",
-                       logFile = "aLogFileForTest.txt" )
+                       logFile = "aLogFileForTest.txt" ,
+                       parameters=[('executable', 'string', '', "Executable Script"), 
+                                   ('arguments', 'string', '', 'Arguments for executable Script'), 
+                                   ( 'applicationLog', 'string', '', "Log file name" ),
+                                   ( 'someCustomOne', 'string', '', "boh" )],
+                       paramValues = [( 'someCustomOne', 'aCustomValue' )] )
     job.setBannedSites( ['LCG.SiteA.com', 'DIRAC.SiteB.org'] )
     job.setOwner( 'ownerName' )
     job.setOwnerGroup( 'ownerGroup' )
@@ -62,6 +67,8 @@ class HelloWorldPlusSuccess( UserJobTestCase ):
 
 class LSSuccess( UserJobTestCase ):
   def test_execute( self ):
+    """ just testing unix "ls"
+    """
 
     job = Job()
 
