@@ -1,7 +1,7 @@
 """ This is a test of the chain
     TransformationClient -> TransformationManagerHandler -> TransformationDB
 
-    It supposed that the DB is present, and that the service is running
+    It supposes that the DB is present, and that the service is running
 """
 
 import unittest
