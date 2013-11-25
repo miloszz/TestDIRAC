@@ -79,13 +79,58 @@ class TransformationClientChain( TestClientTransformationTestCase ):
     res = self.transClient.getTransformationTasks( {'TransformationID': transID} )
     self.assert_( res['OK'] )
     self.assertEqual( len( res['Value'] ), 3 )
+    index = 1
     for task in res['Value']:
       self.assertEqual( task['ExternalStatus'], 'Created' )
+      self.assertEqual( task['TaskID'], index )
+      index += 1
     res = self.transClient.getTransformationFiles( {'TransformationID': transID} )
     self.assert_( res['OK'] )
     self.assertEqual( len( res['Value'] ), 4 )
     for f in res['Value']:
       self.assertEqual( f['Status'], 'Assigned' )
+
+    # now adding a new Transformation with new tasks, and introducing a mix of insertion,
+    # to test that the trigger works as it should
+    res = self.transClient.addTransformation( 'transName-new', 'description', 'longDescription', 'MCSimulation', 'Standard',
+                                              'Manual', '' )
+    transIDNew = res['Value']
+    # add tasks - no lfns
+    res = self.transClient.addTaskForTransformation( transIDNew )
+    self.assert_( res['OK'] )
+    res = self.transClient.addTaskForTransformation( transIDNew )
+    self.assert_( res['OK'] )
+    res = self.transClient.getTransformationTasks( {'TransformationID': transIDNew} )
+    self.assert_( res['OK'] )
+    self.assertEqual( len( res['Value'] ), 2 )
+    index = 1
+    for task in res['Value']:
+      self.assertEqual( task['ExternalStatus'], 'Created' )
+      self.assertEqual( task['TaskID'], index )
+      index += 1
+    # now mixing things
+    res = self.transClient.addTaskForTransformation( transID )
+    self.assert_( res['OK'] )
+    res = self.transClient.addTaskForTransformation( transIDNew )
+    self.assert_( res['OK'] )
+    res = self.transClient.addTaskForTransformation( transID )
+    self.assert_( res['OK'] )
+    res = self.transClient.getTransformationTasks( {'TransformationID': transID} )
+    self.assert_( res['OK'] )
+    self.assertEqual( len( res['Value'] ), 5 )
+    index = 1
+    for task in res['Value']:
+      self.assertEqual( task['ExternalStatus'], 'Created' )
+      self.assertEqual( task['TaskID'], index )
+      index += 1
+    res = self.transClient.getTransformationTasks( {'TransformationID': transIDNew} )
+    self.assert_( res['OK'] )
+    self.assertEqual( len( res['Value'] ), 3 )
+    index = 1
+    for task in res['Value']:
+      self.assertEqual( task['ExternalStatus'], 'Created' )
+      self.assertEqual( task['TaskID'], index )
+      index += 1
 
     # clean
     res = self.transClient.cleanTransformation( transID )
