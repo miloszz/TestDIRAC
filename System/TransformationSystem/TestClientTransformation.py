@@ -142,8 +142,18 @@ class TransformationClientChain( TestClientTransformationTestCase ):
     self.assert_( res['OK'] )
     self.assertEqual( len( res['Value'] ), 0 )
 
+    res = self.transClient.cleanTransformation( transIDNew )
+    self.assert_( res['OK'] )
+    res = self.transClient.getTransformationFiles( {'TransformationID': transIDNew} )
+    self.assert_( res['OK'] )
+    self.assertEqual( len( res['Value'] ), 0 )
+    res = self.transClient.getTransformationTasks( {'TransformationID': transIDNew} )
+    self.assert_( res['OK'] )
+    self.assertEqual( len( res['Value'] ), 0 )
+
     # delete it in the end
     self.transClient.deleteTransformation( transID )
+    self.transClient.deleteTransformation( transIDNew )
 
   def test_mix( self ):
     res = self.transClient.addTransformation( 'transName', 'description', 'longDescription', 'MCSimulation', 'Standard',
