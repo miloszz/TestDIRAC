@@ -213,7 +213,7 @@ class TransformationClientChain( TestClientTransformationTestCase ):
     self.assert_( res['OK'] )
     res = self.transClient.getTransformationLogging( transID )
     self.assert_( res['OK'] )
-    self.assertEqual( len( res['Value'] ), 4 )
+    self.assertAlmostEqual( len( res['Value'] ), 4 )
 
     # delete it in the end
     self.transClient.cleanTransformation( transID )
