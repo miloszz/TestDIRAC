@@ -15,6 +15,8 @@ from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
 
 from DIRAC.RequestManagementSystem.DB.RequestDB import RequestDB
 
+import time
+
 class ReqClientTestCase( unittest.TestCase ):
   """
   .. class:: ReqClientTestCase
@@ -53,6 +55,9 @@ class ReqClientTestCase( unittest.TestCase ):
     self.jsonStr = self.request.toJSON()['Value']
     # # request client
     self.requestClient = ReqClient()
+
+    self.stressRequests = 1000
+    self.bulkRequest = 1000
 
 
   def tearDown( self ):
@@ -170,30 +175,73 @@ class ReqClientMix( ReqClientTestCase ):
 
 # FIXME: add the following:
 
-#
-#  def test04Stress( self ):
-#    """ stress test """
-#
-#    db = RequestDB()
-#
-#    for i in range( self.i ):
-#      request = Request( { "RequestName": "test-%d" % i } )
-#      op = Operation( { "Type": "RemoveReplica", "TargetSE": "CERN-USER" } )
-#      op += File( { "LFN": "/lhcb/user/c/cibak/foo" } )
-#      request += op
-#      put = db.putRequest( request )
-#      self.assertEqual( put["OK"], True, "put failed" )
-#
-#
-#    for i in range( self.i ):
-#      get = db.getRequest( "test-%s" % i, False )
-#      if "Message" in get:
-#        print get["Message"]
-#      self.assertEqual( get["OK"], True, "get failed" )
-#
-#    for i in range( self.i ):
-#      delete = db.deleteRequest( "test-%s" % i )
-#      self.assertEqual( delete["OK"], True, "delete failed" )
+
+  def test04Stress( self ):
+    """ stress test """
+
+    db = RequestDB()
+
+
+    for i in range( self.stressRequests ):
+      request = Request( { "RequestName": "test-%d" % i } )
+      op = Operation( { "Type": "RemoveReplica", "TargetSE": "CERN-USER" } )
+      op += File( { "LFN": "/lhcb/user/c/cibak/foo" } )
+      request += op
+      put = db.putRequest( request )
+      self.assertEqual( put["OK"], True, "put failed" )
+
+    startTime = time.time()
+
+    for i in range( self.stressRequests ):
+      get = db.getRequest( "test-%s" % i, True )
+      if "Message" in get:
+        print get["Message"]
+      self.assertEqual( get["OK"], True, "get failed" )
+
+    endTime = time.time()
+
+    print "getRequest duration %s " % ( endTime - startTime )
+
+    for i in range( self.stressRequests ):
+      delete = db.deleteRequest( "test-%s" % i )
+      self.assertEqual( delete["OK"], True, "delete failed" )
+
+
+  def test04StressBulk( self ):
+    """ stress test bulk """
+
+    db = RequestDB()
+
+    for i in range( self.stressRequests ):
+      request = Request( { "RequestName": "test-%d" % i } )
+      op = Operation( { "Type": "RemoveReplica", "TargetSE": "CERN-USER" } )
+      op += File( { "LFN": "/lhcb/user/c/cibak/foo" } )
+      request += op
+      put = db.putRequest( request )
+      self.assertEqual( put["OK"], True, "put failed" )
+
+    loops = self.stressRequests // self.bulkRequest + ( 1 if ( self.stressRequests % self.bulkRequest ) else 0 )
+    totalSuccessful = 0
+
+    startTime = time.time()
+
+    for i in range( loops ):
+      get = db.getRequests( self.bulkRequest, True )
+      if "Message" in get:
+        print get["Message"]
+      self.assertEqual( get["OK"], True, "get failed" )
+
+      totalSuccessful += len( get["Value"] )
+
+    endTime = time.time()
+
+    print "getRequests duration %s " % ( endTime - startTime )
+
+    self.assertEqual( totalSuccessful, self.stressRequests, "Did not retrieve all the requests: %s instead of %s" % ( totalSuccessful, self.stressRequests ) )
+
+    for i in range( self.stressRequests ):
+      delete = db.deleteRequest( "test-%s" % i )
+      self.assertEqual( delete["OK"], True, "delete failed" )
 #
 #
 #  def test05Scheduled( self ):
