@@ -1,8 +1,10 @@
 import unittest
+
+from TestDIRAC.Utilities.utils import cleanTestDir
+
 from DIRAC import gLogger
-from LHCbTestDirac.Utilities.utils import cleanTestDir
+from DIRAC.Interfaces.API.Dirac import Dirac
 from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
-from LHCbDIRAC.Interfaces.API.DiracLHCb import DiracLHCb
 
 class IntegrationTest( unittest.TestCase ):
   """ Base class for the integration and regression tests
@@ -10,7 +12,7 @@ class IntegrationTest( unittest.TestCase ):
 
   def setUp( self ):
     cleanTestDir()
-    self.dirac = DiracLHCb()
+    self.dirac = Dirac()
     gLogger.setLevel( 'DEBUG' )
 
   def tearDown( self ):
