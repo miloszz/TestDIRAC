@@ -1,5 +1,3 @@
-# TO-DO: to be moved to TestDIRAC
-
 ########################################################################
 # File: DataLoggingClientTests.py
 # Author: Krzysztof.Ciba@NOSPAMgmail.com
@@ -51,7 +49,6 @@ class DataLoggingClientTestCase( unittest.TestCase ):
     dlc = DataLoggingClient()
     self.assertEqual( isinstance( dlc, DataLoggingClient ), True )
     self.assertEqual( dlc.getServer(), "DataManagement/DataLogging" )
-    self.assertEqual( dlc.timeout, 120 )
     ping = dlc.ping()
     self.assertEqual( ping["OK"], True )
 
