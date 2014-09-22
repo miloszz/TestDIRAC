@@ -70,7 +70,7 @@ class WMSChain( TestWMSTestCase ):
     self.getDIRACPlatformMock.return_value = {'OK': False}
 
     job = helloWorldJob()
-    job.setPlatform( "x86_64-slc5-gcc41-opt" )
+    job.setPlatform( "x86_64-slc6" )
 
     jobDescription = createFile( job )
 
