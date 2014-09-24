@@ -65,9 +65,12 @@ class JobSubmissionCase( JobDBTestCase ):
     res = self.jobDB.getJobAttribute( jobID, 'Status' )
     self.assert_( res['OK'] )
     self.assertEqual( res['Value'], 'Received' )
-    result = self.jobDB.getJobAttribute( jobID, 'MinorStatus' )
-    self.assert_( result['OK'] )
-    self.assertEqual( result['Value'], 'Job accepted' )
+    res = self.jobDB.getJobAttribute( jobID, 'MinorStatus' )
+    self.assert_( res['OK'] )
+    self.assertEqual( res['Value'], 'Job accepted' )
+    res = self.jobDB.getJobOptParameters( jobID )
+    self.assert_( res['OK'] )
+    self.assertEqual( res['Value'], {} )
     
 class JobRescheduleCase(JobDBTestCase):  
   
