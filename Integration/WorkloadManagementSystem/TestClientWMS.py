@@ -326,7 +326,7 @@ class JobMonitoring( TestWMSTestCase ):
 
 
 class WMSAdministrator( TestWMSTestCase ):
-  """ testing WMSAdmin - for JobDB and PilotsDB
+  """ testing WMSAdmin - for JobDB
   """
   
   def test_JobDBWMSAdmin(self):
@@ -372,58 +372,101 @@ class WMSAdministrator( TestWMSTestCase ):
     self.assert_( res['OK'] )
     self.assertEqual( res['Value'], [] )
 
+class WMSAdministratorPilots( TestWMSTestCase ):
+  """ testing WMSAdmin - for PilotAgentsDB
+  """
+
   def test_PilotsDB( self ):
 
     wmsAdministrator = RPCClient( 'WorkloadManagement/WMSAdministrator' )
     pilotAgentDB = PilotAgentsDB()
 
 
-#     res = wmsAdministrator.addPilotTQReference()
-#     self.assert_( res['OK'] )
-#
-#     res = wmsAdministrator.getCurrentPilotCounters()
-#     self.assert_( res['OK'] )
-#     self.assertEqual( res['Value'], {} )
+    res = wmsAdministrator.addPilotTQReference( ['aPilot'], 1, '/a/ownerDN', 'a/owner/Group' )
+    self.assert_( res['OK'] )
+    res = wmsAdministrator.getCurrentPilotCounters( {} )
+    self.assert_( res['OK'] )
+    self.assertEqual( res['Value'], {'Submitted': 1L} )
+    res = pilotAgentDB.deletePilot( 'aPilot' )
+    self.assert_( res['OK'] )
+    res = wmsAdministrator.getCurrentPilotCounters( {} )
+    self.assert_( res['OK'] )
+    self.assertEqual( res['Value'], {} )
 
-#     res = wmsAdministrator.getPilotOutput()
-# self.assert_( res['OK'] )
-#     res = wmsAdministrator.getPilotInfo()
-# self.assert_( res['OK'] )
-#     res = wmsAdministrator.selectPilots()
-# self.assert_( res['OK'] )
-# #     res = wmsAdministrator.storePilotOutput()
-# self.assert_( res['OK'] )
-# #     res = wmsAdministrator.getPilotLoggingInfo()
-# self.assert_( res['OK'] )
-# #     res = wmsAdministrator.getJobPilotOutput()
-# self.assert_( res['OK'] )
-# #     res = wmsAdministrator.getPilotSummary()
-# self.assert_( res['OK'] )
-# #     res = wmsAdministrator.getPilotMonitorWeb()
-# self.assert_( res['OK'] )
-# #     res = wmsAdministrator.getPilotMonitorSelectors()
-# self.assert_( res['OK'] )
-# #     res = wmsAdministrator.getPilotSummaryWeb()
-# self.assert_( res['OK'] )
-# #     res = wmsAdministrator.getPilots()
-# self.assert_( res['OK'] )
-# #     res = wmsAdministrator.killPilot()
-# self.assert_( res['OK'] )
-# #     res = wmsAdministrator.setJobForPilot()
-# self.assert_( res['OK'] )
-# #     res = wmsAdministrator.setPilotBenchmark()
-# self.assert_( res['OK'] )
-# #     res = wmsAdministrator.setAccountingFlag()
-# self.assert_( res['OK'] )
-#
-#     setPilotStatus
-#     countPilots
-#     getCounters
+    res = wmsAdministrator.addPilotTQReference( ['anotherPilot'], 1, '/a/ownerDN', 'a/owner/Group' )
+    self.assert_( res['OK'] )
+    res = wmsAdministrator.storePilotOutput( 'anotherPilot', 'This is an output', 'this is an error' )
+    self.assert_( res['OK'] )
+    res = wmsAdministrator.getPilotOutput( 'anotherPilot' )
+    self.assert_( res['OK'] )
+    self.assertEqual( res['Value'], {'OwnerDN': '/a/ownerDN',
+                                     'OwnerGroup': 'a/owner/Group',
+                                     'StdErr': 'this is an error',
+                                     'FileList': [],
+                                     'StdOut': 'This is an output'} )
+    # need a job for the following
+#     res = wmsAdministrator.getJobPilotOutput( 1 )
+#     self.assertEqual( res['Value'], {'OwnerDN': '/a/ownerDN', 'OwnerGroup': 'a/owner/Group',
+#                                      'StdErr': 'this is an error', 'FileList': [], 'StdOut': 'This is an output'} )
+#     self.assert_( res['OK'] )
+    res = wmsAdministrator.getPilotInfo( 'anotherPilot' )
+    self.assert_( res['OK'] )
+    self.assertEqual( res['Value']['anotherPilot']['AccountingSent'], 'False' )
+    self.assertEqual( res['Value']['anotherPilot']['PilotJobReference'], 'anotherPilot' )
+
+    res = wmsAdministrator.selectPilots( {} )
+    self.assert_( res['OK'] )
+#     res = wmsAdministrator.getPilotLoggingInfo( 'anotherPilot' )
+#     self.assert_( res['OK'] )
+    res = wmsAdministrator.getPilotSummary( '', '' )
+    self.assert_( res['OK'] )
+    self.assertEqual( res['Value']['Total']['Submitted'], 1 )
+    res = wmsAdministrator.getPilotMonitorWeb( {}, [], 0, 100 )
+    self.assert_( res['OK'] )
+    self.assertEqual( res['Value']['TotalRecords'], 1 )
+    res = wmsAdministrator.getPilotMonitorSelectors()
+    self.assert_( res['OK'] )
+    self.assertEqual( res['Value'], {'GridType': ['DIRAC'], 
+                                     'OwnerGroup': ['a/owner/Group'], 
+                                     'DestinationSite': ['NotAssigned'], 
+                                     'Broker': ['Unknown'], 'Status': ['Submitted'], 
+                                     'OwnerDN': ['/a/ownerDN'], 
+                                     'GridSite': ['Unknown'], 
+                                     'Owner': []} )
+    res = wmsAdministrator.getPilotSummaryWeb( {}, [], 0, 100 )
+    self.assert_( res['OK'] )
+    self.assertEqual( res['Value']['TotalRecords'], 1 )
+
+    res = wmsAdministrator.setAccountingFlag( 'anotherPilot', 'True' )
+    self.assert_( res['OK'] )
+    res = wmsAdministrator.setPilotStatus( 'anotherPilot', 'Running' )
+    self.assert_( res['OK'] )
+    res = wmsAdministrator.getPilotInfo( 'anotherPilot' )
+    self.assert_( res['OK'] )
+    self.assertEqual( res['Value']['anotherPilot']['AccountingSent'], 'True' )
+    self.assertEqual( res['Value']['anotherPilot']['Status'], 'Running' )
+
+    res = wmsAdministrator.setJobForPilot( 123, 'anotherPilot' )
+    self.assert_( res['OK'] )
+    res = wmsAdministrator.setPilotBenchmark( 'anotherPilot', 12.3 )
+    self.assert_( res['OK'] )
+    res = wmsAdministrator.countPilots( {} )
+    self.assert_( res['OK'] )
+#     res = wmsAdministrator.getCounters()
 #     # getPilotStatistics
+
+    res = pilotAgentDB.deletePilot( 'anotherPilot' )
+    self.assert_( res['OK'] )
+    res = wmsAdministrator.getCurrentPilotCounters( {} )
+    self.assert_( res['OK'] )
+    self.assertEqual( res['Value'], {} )
+
+
 
 if __name__ == '__main__':
   suite = unittest.defaultTestLoader.loadTestsFromTestCase( TestWMSTestCase )
-#   suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( WMSChain ) )
+  suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( WMSChain ) )
   suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( JobMonitoring ) )
-#   suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( WMSAdministrator ) )
+  suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( WMSAdministrator ) )
+  suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( WMSAdministratorPilots ) )
   testResult = unittest.TextTestRunner( verbosity = 2 ).run( suite )
