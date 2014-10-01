@@ -69,8 +69,12 @@ class SSC( TestSSCTestCase ):
     # only ones needing the DB
     res = smDB.getUnusedSandboxes()
     self.assert_( res['OK'] )
+#     print res
+#     ssc.get
+#     smDB.getSandboxId( SEName, SEPFN, requesterName, requesterGroup )
     # cleaning
-#     smDB.deleteSandboxes( self, SBIdList )
+#     res = smDB.deleteSandboxes( SBIdList )
+#     self.assert_( res['OK'] )
 
 
 
