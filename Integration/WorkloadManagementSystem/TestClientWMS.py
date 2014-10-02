@@ -70,6 +70,7 @@ class TestWMSTestCase( unittest.TestCase ):
                             'WorkloadManagement/JobCleaningAgent' )
     jca.initialize()
     res = jca.removeJobsByStatus( { 'Status' : ['Killed', 'Deleted'] } )
+    print res
     self.assert_( res['OK'] )
 
 class WMSChain( TestWMSTestCase ):
@@ -237,6 +238,7 @@ class JobMonitoring( TestWMSTestCase ):
 #     self.assertEqual( type( res['Value'] ), int )
 
 
+class JobMonitoringMore( TestWMSTestCase ):
 
   def test_JobStateUpdateAndJobMonitoringMultuple( self ):
     """ # Now, let's submit some jobs. Different sites, types, inputs
@@ -467,6 +469,7 @@ if __name__ == '__main__':
   suite = unittest.defaultTestLoader.loadTestsFromTestCase( TestWMSTestCase )
   suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( WMSChain ) )
   suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( JobMonitoring ) )
+  suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( JobMonitoringMore ) )
   suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( WMSAdministrator ) )
   suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( WMSAdministratorPilots ) )
   testResult = unittest.TextTestRunner( verbosity = 2 ).run( suite )

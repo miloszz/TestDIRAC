@@ -91,18 +91,6 @@ class JobRescheduleCase(JobDBTestCase):
     self.assertEqual( result['Value'], 'Job Rescheduled' )
 
 
-class JobParametersCase(JobDBTestCase):
-
-  def test_countJobs(self):
-  
-    result = self.jobDB.countJobs({})
-    self.assert_( result['OK'] )
-    njobs = result['Value']
-    result = self.jobDB.selectJobs({})
-    self.assert_( result['OK'] )
-    jobs = result['Value']
-    self.assertEqual( njobs, len( jobs ) )
-
 class CountJobsCase(JobDBTestCase):
 
   def test_getCounters(self):
@@ -115,6 +103,5 @@ if __name__ == '__main__':
 
   suite = unittest.defaultTestLoader.loadTestsFromTestCase(JobSubmissionCase)
   suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( JobRescheduleCase ) )
-  suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( JobParametersCase ) )
   suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( CountJobsCase ) )
   testResult = unittest.TextTestRunner(verbosity=2).run(suite)
