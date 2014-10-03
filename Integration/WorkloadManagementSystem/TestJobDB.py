@@ -3,6 +3,9 @@
 
 import unittest
 
+from DIRAC.Core.Base.Script import parseCommandLine
+parseCommandLine()
+
 from DIRAC import gLogger
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 
