@@ -29,6 +29,8 @@ import os, tempfile
 from DIRAC.Core.Base.Script import parseCommandLine
 parseCommandLine()
 
+from TestDIRAC.Utilities.utils import find_all
+
 from DIRAC.Interfaces.API.Job import Job
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.WorkloadManagementSystem.Client.WMSClient import WMSClient
@@ -41,7 +43,8 @@ from DIRAC import gLogger
 def helloWorldJob():
   job = Job()
   job.setName( "helloWorld" )
-  job.setInputSandbox( '../../Integration/WorkloadManagementSystem/exe-script.py' )
+  exeScriptLocation = find_all( 'exe-script.py', '.', 'WorkloadManagementSystem' )[0]
+  job.setInputSandbox( exeScriptLocation )
   job.setExecutable( "exe-script.py", "", "helloWorld.log" )
   return job
 
@@ -103,7 +106,7 @@ class WMSChain( TestWMSTestCase ):
 
     # reset the job
     res = wmsClient.resetJob( jobID )
-    self.assertFalse( res['OK'] )  # only admins can reset
+    self.assert_( res['OK'] )
 
     # reschedule the job
     res = wmsClient.rescheduleJob( jobID )
@@ -173,8 +176,8 @@ class JobMonitoring( TestWMSTestCase ):
 #     self.assert_( res['OK'] )
     res = jobStateUpdate.setJobSite( jobID, 'Site' )
     self.assert_( res['OK'] )
-    res = jobMonitor.traceJobParameter( 'Site', 1, 'Status' )
-    self.assert_( res['OK'] )
+#     res = jobMonitor.traceJobParameter( 'Site', 1, 'Status' )
+#     self.assert_( res['OK'] )
 
     # now checking few things
     res = jobMonitor.getJobStatus( jobID )
