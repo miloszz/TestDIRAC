@@ -31,6 +31,8 @@ import unittest
 from DIRAC.Core.Base.Script import parseCommandLine
 parseCommandLine()
 
+from TestDIRAC.Utilities.utils import find_all
+
 from DIRAC import gLogger
 
 from DIRAC.WorkloadManagementSystem.Client.SandboxStoreClient import SandboxStoreClient
@@ -57,7 +59,8 @@ class SSC( TestSSCTestCase ):
     ssc = SandboxStoreClient()
     smDB = SandboxMetadataDB()
 
-    fileList = ['exe-script.py']
+    exeScriptLocation = find_all( 'exe-script.py', '.', 'WorkloadManagementSystem' )[0]
+    fileList = [exeScriptLocation]
     res = ssc.uploadFilesAsSandbox( fileList )
     self.assert_( res['OK'] )
 #     SEPFN = res['Value'].split( '|' )[1]

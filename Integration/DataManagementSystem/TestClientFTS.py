@@ -4,6 +4,9 @@
     It supposes that the DB is present, and that the service is running
 """
 
+from DIRAC.Core.Base.Script import parseCommandLine
+parseCommandLine()
+
 import unittest, mock
 import uuid
 
