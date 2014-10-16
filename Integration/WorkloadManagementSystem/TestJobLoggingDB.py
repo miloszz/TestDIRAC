@@ -2,6 +2,10 @@
 """
 
 import unittest, datetime
+
+from DIRAC.Core.Base.Script import parseCommandLine
+parseCommandLine()
+
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
 
 class JobLoggingDBTestCase( unittest.TestCase ):
