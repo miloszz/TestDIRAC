@@ -32,7 +32,8 @@ class JobWrapperSubmissionCase( JobWrapperTestCase ):
                  'JobType': 'Merge',
                  'CPUTime': '1000000',
                  'Executable': '$DIRACROOT/scripts/dirac-jobexec',
-                 'Arguments': "helloWorld.xml -o LogLevel=DEBUG",
+                 'Arguments': "helloWorld.xml -o LogLevel=DEBUG pilot.cfg",
+                 'ExtraOptions': 'pilot.cfg',
                  'InputSandbox': ['helloWorld.xml', 'exe-script.py']}
     resourceParams = {}
     optimizerParams = {}
@@ -49,7 +50,7 @@ class JobWrapperSubmissionCase( JobWrapperTestCase ):
 #     res = computingElement.submitJob( wrapperFile, self.payloadProxy )
 #     self.assert_( res['OK'] )
 
-    res = createJobWrapper( 2, jobParams, resourceParams, optimizerParams, extraOptions = 'extra.cfg', logLevel = 'DEBUG' )
+    res = createJobWrapper( 2, jobParams, resourceParams, optimizerParams, extraOptions = 'pilot.cfg', logLevel = 'DEBUG' )
     self.assert_( res['OK'] )
     wrapperFile = res['Value']
 
