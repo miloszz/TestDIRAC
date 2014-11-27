@@ -45,7 +45,7 @@ def helloWorldJob():
   job.setName( "helloWorld" )
   exeScriptLocation = find_all( 'exe-script.py', '.', 'WorkloadManagementSystem' )[0]
   job.setInputSandbox( exeScriptLocation )
-  job.setExecutable( "exe-script.py", "", "helloWorld.log" )
+  job.setExecutable( exeScriptLocation, "", "helloWorld.log" )
   return job
 
 def createFile( job ):
