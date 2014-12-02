@@ -11,7 +11,9 @@ from DIRAC.Resources.Storage.SRM2V2Storage import SRM2V2Storage
 
 
 class SRM2V2StorageTestCase( unittest.TestCase ):
-
+  """ Test case that sets up with the CERN-GFAL2 storage. Set up uploads 2 files (with gfal2 - not ideal) that will then be attempted to deleted by
+      the removefile test.
+  """
   def setUp( self ):
     gLogger.setLevel( 'NOTICE' )
 
@@ -30,15 +32,31 @@ class SRM2V2StorageTestCase( unittest.TestCase ):
                 'srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/wallpaper.jpg' : \
                 '/home/phi/dev/UnitTests/testfiles/wallpaper.jpg' }
     res = self.srm2v2storage.putFile( putDict )
-#     gfal2_mock = mock.Mock()
-#     self.srm2v2storage.gfal2 = gfal2_mock
     if not res['OK']:
       print 'Couldnt upload testfiles to storage - some tests might fail because files are missing'
 
   def tearDown( self ):
     del self.srm2v2storage
 
+class SRM2V2StorageTestCaseTape( unittest.TestCase ):
+  """ Test case that sets up the CERN-RAW storage for tape operations
+  """
+  def setUp( self ):
+    gLogger.setLevel( 'Notice' )
 
+    storageName = 'CERN-RAW'
+    host = 'srm-lhcb.cern.ch'
+    port = '8443'
+    protocol = 'srm'
+    path = '/castor/cern.ch/grid'
+    spaceToken = 'LHCb-Tape'
+    wspath = '/srm/managerv2?SFN='
+
+    self.srm2v2storage = SRM2V2Storage( storageName, protocol, path, host, port, spaceToken, wspath )
+
+
+  def tearDown( self ):
+    del self.srm2v2storage
 
 class SRM2V2Storage_FileQueryTests( SRM2V2StorageTestCase ):
 
@@ -201,6 +219,28 @@ class SRM2V2Storage_FileTransferTests( SRM2V2StorageTestCase ):
 
 
 class SRM2V2Storage_DirectoryTransferTests( SRM2V2StorageTestCase ):
+
+  def testputDirectory( self ):
+    dirnames = { 'srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/putDir1' : '/home/phi/dev/UnitTests/testfiles/TestFolder' , \
+                 'srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/putDir2/putDir22' : '/home/phi/dev/UnitTests/testfiles/putDirectoryTest', \
+                 'srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/putDir3' : '/home/phi/dev/UnitTests/testfiles/DoenstExist', \
+                 'srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/putDir4' : '/home/phi/dev/UnitTests/testfiles/wallpaper.jpg' }
+    res = self.srm2v2storage.putDirectory( dirnames )
+
+    self.assertEqual( res['OK'], True )
+
+    self.assertEqual( res['Value']['Successful']['srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/putDir1']['Files'], 3 )
+    self.assertEqual( res['Value']['Successful']['srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/putDir1']['Size'], 19891415 )
+
+    self.assertEqual( res['Value']['Successful']['srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/putDir2/putDir22']['Files'], 5 )
+    self.assertEqual( res['Value']['Successful']['srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/putDir2/putDir22']['Size'], 20412870 )
+
+    self.assertEqual( res['Value']['Failed']['srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/putDir3']['Files'], 0 )
+    self.assertEqual( res['Value']['Failed']['srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/putDir3']['Size'], 0 )
+
+    self.assertEqual( res['Value']['Failed']['srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/putDir4']['Files'], 0 )
+    self.assertEqual( res['Value']['Failed']['srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/putDir4']['Size'], 0 )
+
   def testcreateDirectory( self ):
     dirnames = [ 'srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/createDirTest/SubDir', \
               'srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/createDirTest/SubDir2', \
@@ -330,16 +370,127 @@ class SRM2V2Storage_DirectoryQueryTests( SRM2V2StorageTestCase ):
     self.assertEqual( res['Value']['Failed']['srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Unknown'], \
                       "SRM2V2Storage.__getSingleMetadata: Path does not exist" )
 
-class SRM2V2Storage_preStageTests( SRM2V2StorageTestCase ):
-  pass
+class SRM2V2Storage_TapeTests( SRM2V2StorageTestCaseTape ):
+
+  def testprestageFileStatus( self ):
+    paths_wtoken = { 'srm://srm-lhcb.cern.ch/castor/cern.ch/grid/lhcb/data/2010/RAW/FULL/LHCb/COLLISION10/81683/081683_0000000040.raw' : 347447607, \
+                     'srm://srm-lhcb.cern.ch/castor/cern.ch/grid/lhcb/data/2010/RAW/FULL/LHCb/COLLISION10/81683/081683_0000000041.raw' : 347447610, \
+                     'srm://srm-lhcb.cern.ch/castor/cern.ch/grid/lhcb/data/2010/RAW/FULL/LHCb/COLLISION10/81683/081683_0000000041x.raw' : 234}
+    # broken_path = { 'srm://srm-lhcb.cern.ch/castor/cern.ch/grid/lhcb/data/2010/RAW/FULL/LHCb/COLLISION10/81683/081683_0000000041x.raw' : 234}
+    res = self.srm2v2storage.prestageFileStatus( paths_wtoken )
+
+    self.assertEqual( res['OK'], True )
+    self.assertEqual( res['Value']['Successful']['srm://srm-lhcb.cern.ch/castor/cern.ch/grid/lhcb/data/2010/RAW/FULL/LHCb/COLLISION10/81683/081683_0000000040.raw'], False )
+    self.assertEqual( res['Value']['Successful']['srm://srm-lhcb.cern.ch/castor/cern.ch/grid/lhcb/data/2010/RAW/FULL/LHCb/COLLISION10/81683/081683_0000000041.raw'], False )
+#
+#     res = self.srm2v2storage.prestageFileStatus( broken_path )
+    self.assertEqual( res['Value']['Failed']['srm://srm-lhcb.cern.ch/castor/cern.ch/grid/lhcb/data/2010/RAW/FULL/LHCb/COLLISION10/81683/081683_0000000041x.raw'], 'SRM2V2Storage.__prestageSingleFileStatus: Polling request timed out' )
+
+
+  def testprestageFileMock( self ):
+    resource = self.srm2v2storage
+    mock_gfal2 = mock.Mock()
+    resource.gfal2 = mock_gfal2
+
+    resource.gfal2.bring_online.return_value = ( 1, 9999 )  # (return code, token)
+    path = "A"
+    paths = ['A', 'B']
+    res = resource.prestageFile( path )
+    self.assertEqual( res['OK'], True )
+    self.assertEqual( res['Value']['Successful']['A'], 9999 )
+
+    resource.gfal2.bring_online.return_value = ( 0 , 9999 )
+    res = resource.prestageFile( path )
+    self.assertEqual( res['OK'], True )
+    self.assertEqual( res['Value']['Successful']['A'], 9999 )
+
+    resource.gfal2.bring_online.return_value = ( -1 , 9999 )
+    res = resource.prestageFile( path )
+    self.assertEqual( res['OK'], True )
+    self.assertEqual( res['Value']['Failed']['A'], 'SRM2V2Storage.__prestageSingleFile: an error occured while issuing prestaging.' )
+
+    resource.gfal2.bring_online.side_effect = [( 1, 9999 ), ( 0, 8888 ) ]
+    res = resource.prestageFile( paths )
+    self.assertEqual( res['OK'], True )
+    self.assertEqual( res['Value']['Successful']['A'], 9999 )
+    self.assertEqual( res['Value']['Successful']['B'], 8888 )
+
+  def testprestageFileStatusMock( self ):
+    resource = self.srm2v2storage
+    mock_gfal2 = mock.Mock()
+    resource.gfal2 = mock_gfal2
+
+    path = {'A' : 9999}
+    paths = {'A' : 9999, 'B' : 8888}
+
+    resource.gfal2.bring_online_poll.return_value = 1
+    res = resource.prestageFileStatus( path )
+    self.assertEqual( res['OK'], True )
+    self.assertEqual( res['Value']['Successful']['A'], True )
+
+    resource.gfal2.bring_online_poll.return_value = 0
+    res = resource.prestageFileStatus( path )
+    self.assertEqual( res['OK'], True )
+    self.assertEqual( res['Value']['Successful']['A'], False )
+
+    resource.gfal2.bring_online_poll.side_effect = [1, 0]
+    res = resource.prestageFileStatus( paths )
+    self.assertEqual( res['OK'], True )
+    self.assertEqual( res['Value']['Successful']['A'], True )
+    self.assertEqual( res['Value']['Successful']['B'], False )
+
+
+  def testpinFileMock( self ):
+    resource = self.srm2v2storage
+    mock_gfal2 = mock.Mock()
+    resource.gfal2 = mock_gfal2
+
+    resource.gfal2.bring_online.return_value = ( 1, 9999 )  # (return code, token)
+    path = "A"
+    paths = ['A', 'B']
+    res = resource.pinFile( path )
+    self.assertEqual( res['OK'], True )
+    self.assertEqual( res['Value']['Successful']['A'], 9999 )
+
+    resource.gfal2.bring_online.return_value = ( 0 , 9999 )
+    res = resource.pinFile( path )
+    self.assertEqual( res['OK'], True )
+    self.assertEqual( res['Value']['Successful']['A'], 9999 )
+
+    resource.gfal2.bring_online.return_value = ( -1 , 9999 )
+    res = resource.pinFile( path )
+    self.assertEqual( res['OK'], True )
+    self.assertEqual( res['Value']['Failed']['A'], 'SRM2V2Storage.__pinSingleFile: an error occured while issuing pinning.' )
+
+    resource.gfal2.bring_online.side_effect = [( 1, 9999 ), ( 0, 8888 ) ]
+    res = resource.pinFile( paths )
+    self.assertEqual( res['OK'], True )
+    self.assertEqual( res['Value']['Successful']['A'], 9999 )
+    self.assertEqual( res['Value']['Successful']['B'], 8888 )
+
+  def testreleaseFileMock( self ):
+    resource = self.srm2v2storage
+    mock_gfal2 = mock.Mock()
+    resource.gfal2 = mock_gfal2
+
+    resource.gfal2.release.side_effect = [1, -1, 0]
+    path = { 'A' : 123, 'B' : 456, 'C' : 789 }
+    res = resource.releaseFile( path )
+    self.assertEqual( res['OK'], True )
+
+    self.assertEqual( res['Value']['Successful']['A'], '123' )
+    self.assertEqual( res['Value']['Successful']['B'], '456' )
+    self.assertEqual( res['Value']['Failed']['C'], "SRM2V2Storage.__releaseSingleFile: Error occured: Return status < 0" )
+
 
 if __name__ == '__main__':
 
 
   suite = unittest.defaultTestLoader.loadTestsFromTestCase( SRM2V2StorageTestCase )
-  suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( SRM2V2Storage_FileQueryTests ) )
-  suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( SRM2V2Storage_FileTransferTests ) )
-  suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( SRM2V2Storage_DirectoryTransferTests ) )
-  suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( SRM2V2Storage_DirectoryQueryTests ) )
+  # suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( SRM2V2Storage_FileQueryTests ) )
+  # suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( SRM2V2Storage_FileTransferTests ) )
+  # suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( SRM2V2Storage_DirectoryTransferTests ) )
+  # suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( SRM2V2Storage_DirectoryQueryTests ) )
+  suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( SRM2V2Storage_TapeTests ) )
   unittest.TextTestRunner( verbosity = 2 ).run( suite )
 
