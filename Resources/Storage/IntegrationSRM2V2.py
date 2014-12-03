@@ -551,6 +551,13 @@ class SRM2V2Storage_WorkflowTests( SRM2V2StorageTestCase ):
     res = self.srm2v2storage.isDirectory( createDir )
     self.assertEqual( res['OK'], True )
     self.assertEqual( res['Value']['Successful'][createDir[0]], True )
+
+    #### Try to create an already existing directory ####
+    self.srm2v2storage.createDirectory( createDir )
+    res = self.srm2v2storage.isDirectory( createDir )
+    self.assertEqual( res['OK'], True )
+    self.assertEqual( res['Value']['Successful'][createDir[0]], True )
+
     ########### listDir after removing it ###########
     self.srm2v2storage.removeDirectory( rmdir, True )
     print 'removed dir, waiting 10seconds to check for existence'
