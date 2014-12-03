@@ -4,7 +4,7 @@ parseCommandLine()
 
 import unittest
 import mock
-
+import time
 from DIRAC import gLogger
 
 from DIRAC.Resources.Storage.SRM2V2Storage import SRM2V2Storage
@@ -27,13 +27,13 @@ class SRM2V2StorageTestCase( unittest.TestCase ):
     wspath = '/srm/v2/server?SFN='
 
     self.srm2v2storage = SRM2V2Storage( storageName, protocol, path, host, port, spaceToken, wspath )
-    putDict = { 'srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/bsp.zip' : \
-                '/home/phi/dev/UnitTests/testfiles/bsp.zip', \
-                'srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/wallpaper.jpg' : \
-                '/home/phi/dev/UnitTests/testfiles/wallpaper.jpg' }
-    res = self.srm2v2storage.putFile( putDict )
-    if not res['OK']:
-      print 'Couldnt upload testfiles to storage - some tests might fail because files are missing'
+#     putDict = { 'srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/bsp.zip' : \
+#                 '/home/phi/dev/UnitTests/testfiles/bsp.zip', \
+#                 'srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/wallpaper.jpg' : \
+#                 '/home/phi/dev/UnitTests/testfiles/wallpaper.jpg' }
+#     res = self.srm2v2storage.putFile( putDict )
+#     if not res['OK']:
+#       print 'Couldnt upload testfiles to storage - some tests might fail because files are missing'
 
   def tearDown( self ):
     del self.srm2v2storage
@@ -482,6 +482,82 @@ class SRM2V2Storage_TapeTests( SRM2V2StorageTestCaseTape ):
     self.assertEqual( res['Value']['Successful']['B'], '456' )
     self.assertEqual( res['Value']['Failed']['C'], "SRM2V2Storage.__releaseSingleFile: Error occured: Return status < 0" )
 
+class SRM2V2Storage_WorkflowTests( SRM2V2StorageTestCase ):
+  def testWorkflowTest( self ):
+    putDir = { 'srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Workflow/FolderA' : '/home/phi/dev/UnitTests/FolderA' , \
+              'srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Workflow/FolderB' : '/home/phi/dev/UnitTests/FolderB' }
+
+    createDir = ['srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Workflow/FolderA/FolderAA']
+
+    putFile = { 'srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Workflow/FolderA/File1' : '/home/phi/dev/UnitTests/File1' , \
+                'srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Workflow/FolderB/File2' : '/home/phi/dev/UnitTests/File2' , \
+                'srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Workflow/File3' : '/home/phi/dev/UnitTests/File3' }
+
+    isFile = ['srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Workflow/FolderA/File1']
+
+    listDir = ['srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Workflow', \
+               'srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Workflow/FolderA', \
+               'srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Workflow/FolderB']
+
+    removeFile = ['srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Workflow/FolderA/File1']
+
+    rmdir = ['srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Workflow/']
+
+
+    self.srm2v2storage.putDirectory( putDir )
+    res = self.srm2v2storage.listDirectory( listDir )
+    self.assertEqual( res['OK'], True )
+    self.assertEqual( 'srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Workflow/FolderA/FileA' in \
+                      res['Value']['Successful']['srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Workflow/FolderA']['Files'].keys(), True )
+    self.assertEqual( 'srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Workflow/FolderB/FileB' in \
+                      res['Value']['Successful']['srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Workflow/FolderB']['Files'].keys(), True )
+
+    ###### putFile ######
+    res = self.srm2v2storage.putFile( putFile )
+    self.assertEqual( res['OK'], True )
+
+    res = self.srm2v2storage.isFile( isFile )
+    self.assertEqual( res['OK'], True )
+    self.assertEqual( res['Value']['Successful'][isFile[0]], True )
+    ####### putFile for an already existing file #######
+    res = self.srm2v2storage.putFile( putFile )
+    self.assertEqual( res['OK'], True )
+
+    res = self.srm2v2storage.isFile( isFile )
+    self.assertEqual( res['OK'], True )
+    self.assertEqual( res['Value']['Successful'][isFile[0]], True )
+
+
+    ########### listDir after putFile ###########'
+    res = self.srm2v2storage.listDirectory( listDir )
+    self.assertEqual( res['OK'], True )
+    self.assertEqual( 'srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Workflow/FolderA/File1' in \
+                      res['Value']['Successful']['srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Workflow/FolderA']['Files'].keys(), True )
+    self.assertEqual( 'srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Workflow/FolderB/File2' in \
+                      res['Value']['Successful']['srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Workflow/FolderB']['Files'].keys(), True )
+    self.assertEqual( 'srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Workflow/File3' in \
+                      res['Value']['Successful']['srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Workflow']['Files'].keys(), True )
+    ########### listDir after removeFile ###########
+    res = self.srm2v2storage.removeFile( removeFile )
+    self.assertEqual( res['OK'], True )
+
+    res = self.srm2v2storage.listDirectory( listDir )
+    self.assertEqual( res['OK'], True )
+    self.assertEqual( 'srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Workflow/FolderA/File1' in \
+                      res['Value']['Successful']['srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Workflow/FolderA']['Files'].keys(), False )
+
+    ########### isDir new Dir ###########
+    self.srm2v2storage.createDirectory( createDir )
+    res = self.srm2v2storage.isDirectory( createDir )
+    self.assertEqual( res['OK'], True )
+    self.assertEqual( res['Value']['Successful'][createDir[0]], True )
+    ########### listDir after removing it ###########
+    self.srm2v2storage.removeDirectory( rmdir, True )
+    print 'removed dir, waiting 10seconds to check for existence'
+    time.sleep( 10 )
+    res = self.srm2v2storage.exists( rmdir )
+    self.assertEqual( res['OK'], True )
+    self.assertEqual( res['Value']['Successful'][rmdir[0]], False )
 
 if __name__ == '__main__':
 
@@ -491,6 +567,7 @@ if __name__ == '__main__':
   # suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( SRM2V2Storage_FileTransferTests ) )
   # suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( SRM2V2Storage_DirectoryTransferTests ) )
   # suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( SRM2V2Storage_DirectoryQueryTests ) )
-  suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( SRM2V2Storage_TapeTests ) )
+  # suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( SRM2V2Storage_TapeTests ) )
+  suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( SRM2V2Storage_WorkflowTests ) )
   unittest.TextTestRunner( verbosity = 2 ).run( suite )
 
