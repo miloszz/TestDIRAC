@@ -33,7 +33,20 @@ function getCertificate(){
 	chmod 0600 $WORKSPACE/etc/grid-security/hostkey.pem
 
 } 
+
+# utility function
+function prepareForPilot(){
 	
+	#cert first (host certificate)
+	getCertificate
+	
+	#get the necessary scripts
+	wget --no-check-certificate -O dirac-install.py $DIRAC_INSTALL
+	wget --no-check-certificate -O dirac-pilot.py $DIRAC_PILOT
+	wget --no-check-certificate -O pilotTools.py $DIRAC_PILOT_TOOLS
+	wget --no-check-certificate -O pilotCommands.py $DIRAC_PILOT_COMMANDS
+
+}
 
 #...............................................................................
 #
@@ -46,16 +59,9 @@ function getCertificate(){
 
 function DIRACPilotInstall(){
 	
-	#cert first (host certificate)
-	getCertificate
+	prepareForPilot
 	
-	#get the necessary scripts
-	wget --no-check-certificate -O dirac-install.py $DIRAC_INSTALL
-	wget --no-check-certificate -O dirac-pilot.py $DIRAC_PILOT
-	wget --no-check-certificate -O pilotTools.py $DIRAC_PILOT_TOOLS
-	wget --no-check-certificate -O pilotCommands.py $DIRAC_PILOT_COMMANDS
-
-	#run the dirac-pilot script, only for installing, do not run the JobAgent here
+	#run the dirac-pilot script, the JobAgent won't necessarily match a job
 	#FIXME: using LHCb-Certification here, and LHCb CS! Also the version is set, need something smarter 
 	python dirac-pilot.py -S LHCb-Certification -r v6r12p7 -C dips://lbvobox18.cern.ch:9135/Configuration/Server -N jenkins.cern.ch -Q jenkins-queue_not_important -n DIRAC.Jenkins.ch --cert --certLocation=/home/dirac/certs/ $DEBUG
 }
