@@ -56,6 +56,6 @@ function DIRACPilotInstall(){
 	wget --no-check-certificate -O pilotCommands.py $DIRAC_PILOT_COMMANDS
 
 	#run the dirac-pilot script, only for installing, do not run the JobAgent here
-	#FIXME: using LHCb-Certification here, and LHCb CS!
-	python dirac-pilot.py -S LHCb-Certification -C dips://lbvobox18.cern.ch:9135/Configuration/Server -N jenkins.cern.ch -Q jenkins-queue_not_important -n DIRAC.Jenkins.ch --cert --certLocation=/home/dirac/certs/ $DEBUG
+	#FIXME: using LHCb-Certification here, and LHCb CS! Also the version is set, need something smarter 
+	python dirac-pilot.py -S LHCb-Certification -r v6r12p7 -C dips://lbvobox18.cern.ch:9135/Configuration/Server -N jenkins.cern.ch -Q jenkins-queue_not_important -n DIRAC.Jenkins.ch --cert --certLocation=/home/dirac/certs/ $DEBUG
 }
