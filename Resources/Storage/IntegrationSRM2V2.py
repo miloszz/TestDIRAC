@@ -1,14 +1,12 @@
 from DIRAC.Core.Base.Script import parseCommandLine
-from mock import MagicMock
 parseCommandLine()
 
 import unittest
 import mock
-import time
 from DIRAC import gLogger
 
 from DIRAC.Resources.Storage.SRM2V2Storage import SRM2V2Storage
-
+from DIRAC.Resources.Storage.SRM2Storage import SRM2Storage
 
 class SRM2V2StorageTestCase( unittest.TestCase ):
   """ Test case that sets up with the CERN-GFAL2 storage. Set up uploads 2 files (with gfal2 - not ideal) that will then be attempted to deleted by
@@ -26,17 +24,59 @@ class SRM2V2StorageTestCase( unittest.TestCase ):
     spaceToken = 'LHCb-EOS'
     wspath = '/srm/v2/server?SFN='
 
-    self.srm2v2storage = SRM2V2Storage( storageName, protocol, path, host, port, spaceToken, wspath )
-#     putDict = { 'srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/bsp.zip' : \
-#                 '/home/phi/dev/UnitTests/testfiles/bsp.zip', \
-#                 'srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/wallpaper.jpg' : \
-#                 '/home/phi/dev/UnitTests/testfiles/wallpaper.jpg' }
-#     res = self.srm2v2storage.putFile( putDict )
-#     if not res['OK']:
-#       print 'Couldnt upload testfiles to storage - some tests might fail because files are missing'
+    self.srmplugin = SRM2V2Storage( storageName, protocol, path, host, port, spaceToken, wspath )
+    putDict = { 'srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/bsp.zip' : \
+                '/home/phi/dev/UnitTests/testfiles/bsp.zip', \
+                'srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/wallpaper.jpg' : \
+                '/home/phi/dev/UnitTests/testfiles/wallpaper.jpg' }
+    res = self.srmplugin.putFile( putDict )
+    if not res['OK']:
+      print 'Couldnt upload testfiles to storage - some tests might fail because files are missing'
 
   def tearDown( self ):
-    del self.srm2v2storage
+    del self.srmplugin
+
+class SRM2V2StorageTestCaseT( unittest.TestCase ):
+  """ Test case that sets up with the CERN-GFAL2 storage. Set up uploads 2 files (with gfal2 - not ideal) that will then be attempted to deleted by
+      the removefile test.
+  """
+
+  def setUp( self ):
+    gLogger.setLevel( 'NOTICE' )
+    storageName = 'CERN-GFAL2'
+    protocol = 'srm'
+    path = '/eos/lhcb/grid/prod/lhcb/gfal2'
+    host = 'srm-eoslhcb.cern.ch'
+    port = '8443'
+    spaceToken = 'LHCb-EOS'
+    wspath = '/srm/v2/server?SFN='
+
+    self.srmplugin = SRM2V2Storage( storageName, protocol, path, host, port, spaceToken, wspath )
+
+  def tearDown( self ):
+    del self.srmplugin
+
+
+
+class SRM2StorageTestCase( unittest.TestCase ):
+
+  def setUp( self ):
+    gLogger.setLevel( 'NOTICE' )
+
+    storageName = 'CERN-GFAL2'
+    protocol = 'srm'
+    path = '/eos/lhcb/grid/prod/lhcb/gfal2'
+    host = 'srm-eoslhcb.cern.ch'
+    port = '8443'
+    spaceToken = 'LHCb-EOS'
+    wspath = '/srm/v2/server?SFN='
+
+    self.srmplugin = SRM2Storage( storageName, protocol, path, host, port, spaceToken, wspath )
+
+  def tearDown( self ):
+    del self.srmplugin
+
+
 
 class SRM2V2StorageTestCaseTape( unittest.TestCase ):
   """ Test case that sets up the CERN-RAW storage for tape operations
@@ -58,106 +98,107 @@ class SRM2V2StorageTestCaseTape( unittest.TestCase ):
   def tearDown( self ):
     del self.srm2v2storage
 
+
+
 class SRM2V2Storage_FileQueryTests( SRM2V2StorageTestCase ):
-
-  def testExists( self ):
-    # Files exist
-    filenames = ['srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Folder', \
-                 'srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Folder2']
-    res = self.srm2v2storage.exists( filenames )
-    for filename in filenames:
-      self.assertEqual( res['Value']['Successful'][filename], True )
-
-    # Erroneous filenames
-    Efilenames = ['srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Folxder', \
-                  'srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Fxolder2']
-    res = self.srm2v2storage.exists( Efilenames )
-    for filename in Efilenames:
-      self.assertEqual( res['Value']['Successful'][filename], False )
-
-    # Mixed
-    Mfilenames = ['srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Folder', \
-                  'srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Fxolder2']
-    res = self.srm2v2storage.exists( Mfilenames )
-    self.assertEqual( res['Value']['Successful'][Mfilenames[0]], True )  # exists
-    self.assertEqual( res['Value']['Successful'][Mfilenames[1]], False )  # !exists
-
-
-  def testisFile( self ):
-    filenames = ['srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Folder/wallpaper3.jpg', \
-                  'srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Folder2/TestUploadFile.py']
-    res = self.srm2v2storage.isFile( filenames )
-    for filename in filenames:
-      self.assertEqual( res['Value']['Successful'][filename], True )
-
-    Efilenames = ['srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Folder/', \
-                   'srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Folder2/TestUploadFileX.py']
-    res = self.srm2v2storage.isFile( Efilenames )
-    self.assertEqual( res['Value']['Successful'][Efilenames[0]], False )
-    self.assertEqual( res['Value']['Failed'][Efilenames[1]], "SRM2V2Storage.__isSingleFile: File does not exist." )
-
-    Mfilenames = ['srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Folder/wallpaper3.jpg', \
-                   'srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Folder/', 'srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Folder2/TestUploadFileX.py']
-    res = self.srm2v2storage.isFile( Mfilenames )
-    self.assertEqual( res['Value']['Successful'][Mfilenames[0]], True )
-    self.assertEqual( res['Value']['Successful'][Mfilenames[1]], False )
-    self.assertEqual( res['Value']['Failed'][Mfilenames[2]], "SRM2V2Storage.__isSingleFile: File does not exist." )
-
-  def testgetFileSize( self ):
-    filenames = ['srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/bsp.zip', \
-                 'srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/wallpaper.jpg', \
-                 'srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/doesntexist.jpg']
-    res = self.srm2v2storage.getFileSize( filenames )
-    self.assertEqual( res['Value']['Successful']['srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/bsp.zip'], 18850447 )
-    self.assertEqual( res['Value']['Successful']['srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/wallpaper.jpg'], 520484 )
-    self.assertEqual( res['Value']['Failed']['srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/doesntexist.jpg'], "SRM2V2Storage.__isSingleFile: File does not exist." )
-
-  def testgetFileMetadata( self ):
-    filenames = ['srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/bsp.zip', \
-                 'srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/wallpaper.jpg', \
-                 'srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/doesntexist.jpg']
-    res = self.srm2v2storage.getFileMetadata( filenames )
-    self.assertEqual( res['OK'], True )
-    metaDict = res['Value']['Successful']['srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/bsp.zip']
-    self.assertEqual( metaDict['File'], True )
-    self.assertEqual( metaDict['Size'], 18850447 )
-    metaDict = res['Value']['Successful']['srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/wallpaper.jpg']
-    self.assertEqual( metaDict['File'], True )
-    self.assertEqual( metaDict['Size'], 520484 )
-
-    self.assertEqual( res['Value']['Failed'].keys()[0], 'srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/doesntexist.jpg' )
+#
+#   def testExists( self ):
+#     # Files exist
+#     filenames = ['srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Folder', \
+#                  'srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Folder2']
+#     res = self.srmplugin.exists( filenames )
+#     for filename in filenames:
+#       self.assertEqual( res['Value']['Successful'][filename], True )
+#
+#     # Erroneous filenames
+#     Efilenames = ['srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Folxder', \
+#                   'srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Fxolder2']
+#     res = self.srmplugin.exists( Efilenames )
+#     for filename in Efilenames:
+#       self.assertEqual( res['Value']['Successful'][filename], False )
+#
+#     # Mixed
+#     Mfilenames = ['srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Folder', \
+#                   'srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Fxolder2']
+#     res = self.srmplugin.exists( Mfilenames )
+#     self.assertEqual( res['Value']['Successful'][Mfilenames[0]], True )  # exists
+#     self.assertEqual( res['Value']['Successful'][Mfilenames[1]], False )  # !exists
+#
+#
+#   def testisFile( self ):
+#     filenames = ['srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Folder/wallpaper3.jpg', \
+#                   'srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Folder2/TestUploadFile.py']
+#     res = self.srmplugin.isFile( filenames )
+#     for filename in filenames:
+#       self.assertEqual( res['Value']['Successful'][filename], True )
+#
+#     Efilenames = ['srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Folder/', \
+#                    'srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Folder2/TestUploadFileX.py']
+#     res = self.srmplugin.isFile( Efilenames )
+#     self.assertEqual( res['Value']['Successful'][Efilenames[0]], False )
+#     self.assertEqual( res['Value']['Failed'][Efilenames[1]], "SRM2V2Storage.__isSingleFile: File does not exist." )
+#
+#     Mfilenames = ['srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Folder/wallpaper3.jpg', \
+#                    'srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Folder/', 'srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Folder2/TestUploadFileX.py']
+#     res = self.srmplugin.isFile( Mfilenames )
+#     self.assertEqual( res['Value']['Successful'][Mfilenames[0]], True )
+#     self.assertEqual( res['Value']['Successful'][Mfilenames[1]], False )
+#     self.assertEqual( res['Value']['Failed'][Mfilenames[2]], "SRM2V2Storage.__isSingleFile: File does not exist." )
+#
+#   def testgetFileSize( self ):
+#     filenames = ['srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/bsp.zip', \
+#                  'srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/wallpaper.jpg', \
+#                  'srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/doesntexist.jpg']
+#     res = self.srmplugin.getFileSize( filenames )
+#     self.assertEqual( res['Value']['Successful']['srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/bsp.zip'], 18850447 )
+#     self.assertEqual( res['Value']['Successful']['srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/wallpaper.jpg'], 520484 )
+#     self.assertEqual( res['Value']['Failed']['srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/doesntexist.jpg'], "SRM2V2Storage.__isSingleFile: File does not exist." )
+#
+#   def testgetFileMetadata( self ):
+#     filenames = ['srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/bsp.zip', \
+#                  'srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/wallpaper.jpg', \
+#                  'srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/doesntexist.jpg']
+#     res = self.srmplugin.getFileMetadata( filenames )
+#     self.assertEqual( res['OK'], True )
+#     metaDict = res['Value']['Successful']['srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/bsp.zip']
+#     self.assertEqual( metaDict['File'], True )
+#     self.assertEqual( metaDict['Size'], 18850447 )
+#     metaDict = res['Value']['Successful']['srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/wallpaper.jpg']
+#     self.assertEqual( metaDict['File'], True )
+#     self.assertEqual( metaDict['Size'], 520484 )
+#
+#     self.assertEqual( res['Value']['Failed'].keys()[0], 'srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/doesntexist.jpg' )
 
   def testgetTransportURL( self ):
     filenames = ['srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/bsp.zip', \
                  'srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/wallpaper.jpg', \
                  'srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/doesntexist.jpg']
 
-    res = self.srm2v2storage.getTransportURL( filenames )
+    res = self.srmplugin.getTransportURL( filenames )
     self.assertEqual( res['OK'], True )
     self.assertEqual( res['Value']['Successful']['srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/bsp.zip'], \
                       'root://eoslhcb.cern.ch//eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/bsp.zip' )
 
-    res = self.srm2v2storage.getTransportURL( filenames, ['gsiftp'] )
+    res = self.srmplugin.getTransportURL( filenames, ['gsiftp'] )
     self.assertEqual( res['OK'], True )
     self.assertEqual( res['Value']['Successful']['srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/bsp.zip'], \
                       'gsiftp://eoslhcbftp.cern.ch//eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/bsp.zip' )
 
-#     res = self.srm2v2storage.getTransportURL( filenames, ['root'] )
+#     res = self.srmplugin.getTransportURL( filenames, ['root'] )
 #     self.assertEqual( res['OK'], True )
 #     self.assertEqual( res['Value']['Successful']['srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/bsp.zip'], \
 #                       'gsiftp://eoslhcbftp.cern.ch//eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/bsp.zip' )
 
 
-class SRM2V2Storage_FileTransferTests( SRM2V2StorageTestCase ):
-
-  def testputFile( self ):
+class SRM2V2Storage_putGetTests( SRM2V2StorageTestCase ):
+  def testputFile(self):
     putDict = { 'srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/bsp.zip' : \
                 '/home/phi/dev/UnitTests/testfiles/bsp.zip', \
-                'srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/wallpaper.jpg' : \
+                'srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Folder/wallpaper3.jpg' : \
                 '/home/phi/dev/UnitTests/testfiles/wallpaper.jpg' }
-    res = self.srm2v2storage.putFile( putDict )
+    res = self.srmplugin.putFile( putDict )
     self.assertEqual( res['Value']['Successful']['srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/bsp.zip'], 18850447 )
-    self.assertEqual( res['Value']['Successful']['srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/wallpaper.jpg'], 520484 )
+    self.assertEqual( res['Value']['Successful']['srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Folder/wallpaper3.jpg'], 520484 )
 
     # 1. Fails: local file does not exist, 2. Succeeds , 3. Fails: source is a directory, not a file
     MputDict = { 'srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/bsp33.zip' :\
@@ -166,7 +207,7 @@ class SRM2V2Storage_FileTransferTests( SRM2V2StorageTestCase ):
                  '/home/phi/dev/UnitTests/testfiles/TestFolder/Testwallpaper.jpg', \
                  'srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/DoesntExist/wallpaper2.jpg' :\
                  '/home/phi/dev/UnitTests/testfiles/TestFolder/'  }
-    res = self.srm2v2storage.putFile( MputDict )
+    res = self.srmplugin.putFile( MputDict )
     self.assertEqual( res['Value']['Failed']['srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/bsp33.zip'], \
                        "SRM2V2Storage.__putFile: The local source file does not exist or is a directory" )
     self.assertEqual( res['Value']['Successful']['srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/DoesntExist/wallpaper.jpg'], \
@@ -177,18 +218,58 @@ class SRM2V2Storage_FileTransferTests( SRM2V2StorageTestCase ):
     # 1: Succeeds, 2: Fails: SRM to SRM needs filesize to compare to
     SRMputDict = { 'srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/bsp2.zip' : \
                 'srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/bsp.zip' }
-    res = self.srm2v2storage.putFile( SRMputDict, 18850447 )
+    res = self.srmplugin.putFile( SRMputDict, 18850447 )
     self.assertEqual( res['Value']['Successful']['srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/bsp2.zip'], 18850447 )
-    res = self.srm2v2storage.putFile( SRMputDict, 0 )
+    res = self.srmplugin.putFile( SRMputDict, 0 )
     self.assertEqual( res['Value']['Failed']['srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/bsp2.zip'], \
                       "SRM2V2Storage.__putFile: For file replication the source file size in bytes must be provided." )
+
+  def testputDirectory( self ):
+    dirnames = { 'srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/putDir1' : '/home/phi/dev/UnitTests/testfiles/TestFolder' , \
+                 'srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/putDir2/putDir22' : '/home/phi/dev/UnitTests/testfiles/putDirectoryTest', \
+                 'srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/putDir3' : '/home/phi/dev/UnitTests/testfiles/DoenstExist', \
+                 'srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/putDir4' : '/home/phi/dev/UnitTests/testfiles/wallpaper.jpg' }
+    res = self.srmplugin.putDirectory( dirnames )
+
+    self.assertEqual( res['OK'], True )
+
+    self.assertEqual( res['Value']['Successful']['srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/putDir1']['Files'], 3 )
+    self.assertEqual( res['Value']['Successful']['srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/putDir1']['Size'], 19891415 )
+
+    self.assertEqual( res['Value']['Successful']['srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/putDir2/putDir22']['Files'], 5 )
+    self.assertEqual( res['Value']['Successful']['srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/putDir2/putDir22']['Size'], 20412870 )
+
+    self.assertEqual( res['Value']['Failed']['srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/putDir3']['Files'], 0 )
+    self.assertEqual( res['Value']['Failed']['srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/putDir3']['Size'], 0 )
+
+    self.assertEqual( res['Value']['Failed']['srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/putDir4']['Files'], 0 )
+    self.assertEqual( res['Value']['Failed']['srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/putDir4']['Size'], 0 )
+
+  def testgetDirectory( self ):
+    path = '/home/phi/dev/UnitTests/getDirPath'
+
+    dirnames = ['srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/putDir1', \
+                'srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/putDir2', \
+                'srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Unknown']
+    res = self.srmplugin.getDirectory( dirnames, path )
+    self.assertEqual( res['OK'], True )
+    self.assertEqual( res['Value']['Successful']['srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/putDir1']['Files'], 3 )
+    self.assertEqual( res['Value']['Successful']['srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/putDir1']['Size'], 19891415 )
+
+
+    self.assertEqual( res['Value']['Successful']['srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/putDir2']['Files'], 5 )
+    self.assertEqual( res['Value']['Successful']['srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/putDir2']['Size'], 20412870 )
+
+
+    self.assertEqual( res['Value']['Failed']['srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Unknown']['Files'], 0 )
+    self.assertEqual( res['Value']['Failed']['srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Unknown']['Size'], 0 )
 
   def testGetFile( self ):
     filenames = ['srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/bsp.zip', \
                  'srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/wallpaper.jpg', \
                  'srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/doesntexist.jpg', \
                  'srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/' ]
-    res = self.srm2v2storage.getFile( filenames )
+    res = self.srmplugin.getFile( filenames )
     self.assertEqual( res['Value']['Successful']['srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/bsp.zip'], 18850447 )
     self.assertEqual( res['Value']['Successful']['srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/wallpaper.jpg'], 520484 )
     self.assertEqual( res['Value']['Failed']['srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/doesntexist.jpg'], \
@@ -197,7 +278,65 @@ class SRM2V2Storage_FileTransferTests( SRM2V2StorageTestCase ):
                       'SRM2V2Storage.__getSingleFile: Error while determining file size: SRM2V2Storage.__getSingleFileSize: path is not a file' )
 
     # with a local path
-    res = self.srm2v2storage.getFile( filenames, '/home/phi/Downloads/getDirTest' )
+    res = self.srmplugin.getFile( filenames, '/home/phi/Downloads/getDirTest' )
+    self.assertEqual( res['Value']['Successful']['srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/bsp.zip'], 18850447 )
+    self.assertEqual( res['Value']['Successful']['srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/wallpaper.jpg'], 520484 )
+    self.assertEqual( res['Value']['Failed']['srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/doesntexist.jpg'], \
+                      "SRM2V2Storage.__getSingleFile: Error while determining file size: SRM2V2Storage.__isSingleFile: File does not exist." )
+    self.assertEqual( res['Value']['Failed']['srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/'], \
+                      'SRM2V2Storage.__getSingleFile: Error while determining file size: SRM2V2Storage.__getSingleFileSize: path is not a file' )
+
+
+class SRM2V2Storage_FileTransferTests( SRM2V2StorageTestCase ):
+
+  def testputFile( self ):
+    putDict = { 'srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/bsp.zip' : \
+                '/home/phi/dev/UnitTests/testfiles/bsp.zip', \
+                'srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Folder/wallpaper3.jpg' : \
+                '/home/phi/dev/UnitTests/testfiles/wallpaper.jpg' }
+    res = self.srmplugin.putFile( putDict )
+    self.assertEqual( res['Value']['Successful']['srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/bsp.zip'], 18850447 )
+    self.assertEqual( res['Value']['Successful']['srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Folder/wallpaper3.jpg'], 520484 )
+
+    # 1. Fails: local file does not exist, 2. Succeeds , 3. Fails: source is a directory, not a file
+    MputDict = { 'srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/bsp33.zip' :\
+                 '/home/phi/dev/UnitTests/testfiles/Folder/a*b.zip' , \
+                 'srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/DoesntExist/wallpaper.jpg' :\
+                 '/home/phi/dev/UnitTests/testfiles/TestFolder/Testwallpaper.jpg', \
+                 'srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/DoesntExist/wallpaper2.jpg' :\
+                 '/home/phi/dev/UnitTests/testfiles/TestFolder/'  }
+    res = self.srmplugin.putFile( MputDict )
+    self.assertEqual( res['Value']['Failed']['srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/bsp33.zip'], \
+                       "SRM2V2Storage.__putFile: The local source file does not exist or is a directory" )
+    self.assertEqual( res['Value']['Successful']['srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/DoesntExist/wallpaper.jpg'], \
+                       520484 )
+    self.assertEqual( res['Value']['Failed']['srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/DoesntExist/wallpaper2.jpg'], \
+                      "SRM2V2Storage.__putFile: The local source file does not exist or is a directory" )
+
+    # 1: Succeeds, 2: Fails: SRM to SRM needs filesize to compare to
+    SRMputDict = { 'srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/bsp2.zip' : \
+                'srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/bsp.zip' }
+    res = self.srmplugin.putFile( SRMputDict, 18850447 )
+    self.assertEqual( res['Value']['Successful']['srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/bsp2.zip'], 18850447 )
+    res = self.srmplugin.putFile( SRMputDict, 0 )
+    self.assertEqual( res['Value']['Failed']['srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/bsp2.zip'], \
+                      "SRM2V2Storage.__putFile: For file replication the source file size in bytes must be provided." )
+
+  def testGetFile( self ):
+    filenames = ['srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/bsp.zip', \
+                 'srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/wallpaper.jpg', \
+                 'srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/doesntexist.jpg', \
+                 'srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/' ]
+    res = self.srmplugin.getFile( filenames )
+    self.assertEqual( res['Value']['Successful']['srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/bsp.zip'], 18850447 )
+    self.assertEqual( res['Value']['Successful']['srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/wallpaper.jpg'], 520484 )
+    self.assertEqual( res['Value']['Failed']['srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/doesntexist.jpg'], \
+                      "SRM2V2Storage.__getSingleFile: Error while determining file size: SRM2V2Storage.__isSingleFile: File does not exist." )
+    self.assertEqual( res['Value']['Failed']['srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/'], \
+                      'SRM2V2Storage.__getSingleFile: Error while determining file size: SRM2V2Storage.__getSingleFileSize: path is not a file' )
+
+    # with a local path
+    res = self.srmplugin.getFile( filenames, '/home/phi/Downloads/getDirTest' )
     self.assertEqual( res['Value']['Successful']['srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/bsp.zip'], 18850447 )
     self.assertEqual( res['Value']['Successful']['srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/wallpaper.jpg'], 520484 )
     self.assertEqual( res['Value']['Failed']['srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/doesntexist.jpg'], \
@@ -210,7 +349,7 @@ class SRM2V2Storage_FileTransferTests( SRM2V2StorageTestCase ):
                  'srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/wallpaper.jpg', \
                  'srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/doesntexist.jpg', \
                  'srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/' ]
-    res = self.srm2v2storage.removeFile( filenames )
+    res = self.srmplugin.removeFile( filenames )
     self.assertEqual( res['OK'], True )
     self.assertEqual( res['Value']['Successful']['srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/bsp.zip'], True )
     self.assertEqual( res['Value']['Successful']['srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/wallpaper.jpg'], True )
@@ -225,7 +364,7 @@ class SRM2V2Storage_DirectoryTransferTests( SRM2V2StorageTestCase ):
                  'srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/putDir2/putDir22' : '/home/phi/dev/UnitTests/testfiles/putDirectoryTest', \
                  'srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/putDir3' : '/home/phi/dev/UnitTests/testfiles/DoenstExist', \
                  'srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/putDir4' : '/home/phi/dev/UnitTests/testfiles/wallpaper.jpg' }
-    res = self.srm2v2storage.putDirectory( dirnames )
+    res = self.srmplugin.putDirectory( dirnames )
 
     self.assertEqual( res['OK'], True )
 
@@ -246,7 +385,7 @@ class SRM2V2Storage_DirectoryTransferTests( SRM2V2StorageTestCase ):
               'srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/createDirTest/SubDir2', \
               'srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/createDirTest/SubDir', \
               'srm://.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/createDirTest/SubDir']
-    res = self.srm2v2storage.createDirectory( dirnames )
+    res = self.srmplugin.createDirectory( dirnames )
     self.assertEqual( res['OK'], True )
     self.assertEqual( res['Value']['Successful']['srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/createDirTest/SubDir'], True )
     self.assertEqual( res['Value']['Successful']['srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/createDirTest/SubDir2'], True )
@@ -259,7 +398,7 @@ class SRM2V2Storage_DirectoryTransferTests( SRM2V2StorageTestCase ):
       dirnames = ['srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Folder', \
                   'srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Folder2', \
                   'srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Unknown']
-      res = self.srm2v2storage.getDirectory( dirnames )
+      res = self.srmplugin.getDirectory( dirnames )
       self.assertEqual( res['OK'], True )
       self.assertEqual( res['Value']['Successful']['srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Folder']['Files'], 5 )
       self.assertEqual( res['Value']['Successful']['srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Folder']['Size'], 20412870 )
@@ -275,7 +414,7 @@ class SRM2V2Storage_DirectoryTransferTests( SRM2V2StorageTestCase ):
       dirnames = ['srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Folder', \
                   'srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Folder2', \
                   'srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Unknown']
-      res = self.srm2v2storage.getDirectory( dirnames, path )
+      res = self.srmplugin.getDirectory( dirnames, path )
       self.assertEqual( res['OK'], True )
       self.assertEqual( res['Value']['Successful']['srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Folder']['Files'], 5 )
       self.assertEqual( res['Value']['Successful']['srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Folder']['Size'], 20412870 )
@@ -295,7 +434,7 @@ class SRM2V2Storage_DirectoryQueryTests( SRM2V2StorageTestCase ):
                   'srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Folder2', \
                   'srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/wallpaper.jpg', \
                   'srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Unknown']
-    res = self.srm2v2storage.isDirectory( dirnames )
+    res = self.srmplugin.isDirectory( dirnames )
     self.assertEqual( res['OK'], True )
     self.assertEqual( res['Value']['Successful']['srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Folder'], True )
     self.assertEqual( res['Value']['Successful']['srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Folder2'], True )
@@ -309,7 +448,7 @@ class SRM2V2Storage_DirectoryQueryTests( SRM2V2StorageTestCase ):
                   'srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/wallpaper.jpg', \
                   'srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Unknown']
 
-    res = self.srm2v2storage.getDirectorySize( dirnames )
+    res = self.srmplugin.getDirectorySize( dirnames )
     self.assertEqual( res['OK'], True )
 
     self.assertEqual( res['Value']['Successful']['srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Folder']['Files'], 3 )
@@ -332,7 +471,7 @@ class SRM2V2Storage_DirectoryQueryTests( SRM2V2StorageTestCase ):
                   'srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/wallpaper.jpg', \
                   'srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Unknown']
 
-    res = self.srm2v2storage.listDirectory( dirnames )
+    res = self.srmplugin.listDirectory( dirnames )
     self.assertEqual( res['OK'], True )
 
     self.assertEqual( 'Files' in res['Value']['Successful']['srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Folder'].keys(), True )
@@ -353,7 +492,7 @@ class SRM2V2Storage_DirectoryQueryTests( SRM2V2StorageTestCase ):
                   'srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Folder2', \
                   'srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/wallpaper.jpg', \
                   'srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Unknown']
-    res = self.srm2v2storage.getDirectoryMetadata( dirnames )
+    res = self.srmplugin.getDirectoryMetadata( dirnames )
     self.assertEqual( res['OK'], True )
 
     metaDict = res['Value']['Successful']['srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Folder']
@@ -377,18 +516,18 @@ class SRM2V2Storage_TapeTests( SRM2V2StorageTestCaseTape ):
                      'srm://srm-lhcb.cern.ch/castor/cern.ch/grid/lhcb/data/2010/RAW/FULL/LHCb/COLLISION10/81683/081683_0000000041.raw' : 347447610, \
                      'srm://srm-lhcb.cern.ch/castor/cern.ch/grid/lhcb/data/2010/RAW/FULL/LHCb/COLLISION10/81683/081683_0000000041x.raw' : 234}
     # broken_path = { 'srm://srm-lhcb.cern.ch/castor/cern.ch/grid/lhcb/data/2010/RAW/FULL/LHCb/COLLISION10/81683/081683_0000000041x.raw' : 234}
-    res = self.srm2v2storage.prestageFileStatus( paths_wtoken )
+    res = self.srmplugin.prestageFileStatus( paths_wtoken )
 
     self.assertEqual( res['OK'], True )
     self.assertEqual( res['Value']['Successful']['srm://srm-lhcb.cern.ch/castor/cern.ch/grid/lhcb/data/2010/RAW/FULL/LHCb/COLLISION10/81683/081683_0000000040.raw'], False )
     self.assertEqual( res['Value']['Successful']['srm://srm-lhcb.cern.ch/castor/cern.ch/grid/lhcb/data/2010/RAW/FULL/LHCb/COLLISION10/81683/081683_0000000041.raw'], False )
 #
-#     res = self.srm2v2storage.prestageFileStatus( broken_path )
+#     res = self.srmplugin.prestageFileStatus( broken_path )
     self.assertEqual( res['Value']['Failed']['srm://srm-lhcb.cern.ch/castor/cern.ch/grid/lhcb/data/2010/RAW/FULL/LHCb/COLLISION10/81683/081683_0000000041x.raw'], 'SRM2V2Storage.__prestageSingleFileStatus: Polling request timed out' )
 
 
   def testprestageFileMock( self ):
-    resource = self.srm2v2storage
+    resource = self.srmplugin
     mock_gfal2 = mock.Mock()
     resource.gfal2 = mock_gfal2
 
@@ -416,7 +555,7 @@ class SRM2V2Storage_TapeTests( SRM2V2StorageTestCaseTape ):
     self.assertEqual( res['Value']['Successful']['B'], 8888 )
 
   def testprestageFileStatusMock( self ):
-    resource = self.srm2v2storage
+    resource = self.srmplugin
     mock_gfal2 = mock.Mock()
     resource.gfal2 = mock_gfal2
 
@@ -441,7 +580,7 @@ class SRM2V2Storage_TapeTests( SRM2V2StorageTestCaseTape ):
 
 
   def testpinFileMock( self ):
-    resource = self.srm2v2storage
+    resource = self.srmplugin
     mock_gfal2 = mock.Mock()
     resource.gfal2 = mock_gfal2
 
@@ -469,7 +608,7 @@ class SRM2V2Storage_TapeTests( SRM2V2StorageTestCaseTape ):
     self.assertEqual( res['Value']['Successful']['B'], 8888 )
 
   def testreleaseFileMock( self ):
-    resource = self.srm2v2storage
+    resource = self.srmplugin
     mock_gfal2 = mock.Mock()
     resource.gfal2 = mock_gfal2
 
@@ -483,98 +622,111 @@ class SRM2V2Storage_TapeTests( SRM2V2StorageTestCaseTape ):
     self.assertEqual( res['Value']['Failed']['C'], "SRM2V2Storage.__releaseSingleFile: Error occured: Return status < 0" )
 
 class SRM2V2Storage_WorkflowTests( SRM2V2StorageTestCase ):
+  def setUp( self ):
+    self.toTest = [SRM2Storage, SRM2V2Storage]
+
+  def tearDown( self ):
+    del self.toTest
+
   def testWorkflowTest( self ):
-    putDir = { 'srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Workflow/FolderA' : '/home/phi/dev/UnitTests/FolderA' , \
-              'srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Workflow/FolderB' : '/home/phi/dev/UnitTests/FolderB' }
+    storageName = 'CERN-GFAL2'
+    protocol = 'srm'
+    path = '/eos/lhcb/grid/prod/lhcb/gfal2'
+    host = 'srm-eoslhcb.cern.ch'
+    port = '8443'
+    spaceToken = 'LHCb-EOS'
+    wspath = '/srm/v2/server?SFN='
+    for cls in self.toTest:
 
-    createDir = ['srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Workflow/FolderA/FolderAA']
+      inst = cls( storageName, protocol, path, host, port, spaceToken, wspath )
 
-    putFile = { 'srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Workflow/FolderA/File1' : '/home/phi/dev/UnitTests/File1' , \
-                'srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Workflow/FolderB/File2' : '/home/phi/dev/UnitTests/File2' , \
-                'srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Workflow/File3' : '/home/phi/dev/UnitTests/File3' }
+      putDir = { 'srm://srm-eoslhcb.cern.ch:8443/srm/v2/server?SFN=/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Workflow/FolderA' : '/home/phi/dev/UnitTests/FolderA' , \
+                'srm://srm-eoslhcb.cern.ch:8443/srm/v2/server?SFN=/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Workflow/FolderB' : '/home/phi/dev/UnitTests/FolderB' }
 
-    isFile = ['srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Workflow/FolderA/File1']
+      createDir = ['srm://srm-eoslhcb.cern.ch:8443/srm/v2/server?SFN=/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Workflow/FolderA/FolderAA']
 
-    listDir = ['srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Workflow', \
-               'srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Workflow/FolderA', \
-               'srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Workflow/FolderB']
+      putFile = { 'srm://srm-eoslhcb.cern.ch:8443/srm/v2/server?SFN=/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Workflow/FolderA/File1' : '/home/phi/dev/UnitTests/File1' , \
+                  'srm://srm-eoslhcb.cern.ch:8443/srm/v2/server?SFN=/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Workflow/FolderB/File2' : '/home/phi/dev/UnitTests/File2' , \
+                  'srm://srm-eoslhcb.cern.ch:8443/srm/v2/server?SFN=/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Workflow/File3' : '/home/phi/dev/UnitTests/File3' }
 
-    removeFile = ['srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Workflow/FolderA/File1']
+      isFile = ['srm://srm-eoslhcb.cern.ch:8443/srm/v2/server?SFN=/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Workflow/FolderA/File1']
 
-    rmdir = ['srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Workflow/']
+      listDir = ['srm://srm-eoslhcb.cern.ch:8443/srm/v2/server?SFN=/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Workflow', \
+                 'srm://srm-eoslhcb.cern.ch:8443/srm/v2/server?SFN=/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Workflow/FolderA', \
+                 'srm://srm-eoslhcb.cern.ch:8443/srm/v2/server?SFN=/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Workflow/FolderB']
 
+      removeFile = ['srm://srm-eoslhcb.cern.ch:8443/srm/v2/server?SFN=/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Workflow/FolderA/File1']
 
-    self.srm2v2storage.putDirectory( putDir )
-    res = self.srm2v2storage.listDirectory( listDir )
-    self.assertEqual( res['OK'], True )
-    self.assertEqual( 'srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Workflow/FolderA/FileA' in \
-                      res['Value']['Successful']['srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Workflow/FolderA']['Files'].keys(), True )
-    self.assertEqual( 'srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Workflow/FolderB/FileB' in \
-                      res['Value']['Successful']['srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Workflow/FolderB']['Files'].keys(), True )
-
-    ###### putFile ######
-    res = self.srm2v2storage.putFile( putFile )
-    self.assertEqual( res['OK'], True )
-
-    res = self.srm2v2storage.isFile( isFile )
-    self.assertEqual( res['OK'], True )
-    self.assertEqual( res['Value']['Successful'][isFile[0]], True )
-    ####### putFile for an already existing file #######
-    res = self.srm2v2storage.putFile( putFile )
-    self.assertEqual( res['OK'], True )
-
-    res = self.srm2v2storage.isFile( isFile )
-    self.assertEqual( res['OK'], True )
-    self.assertEqual( res['Value']['Successful'][isFile[0]], True )
+      rmdir = ['srm://srm-eoslhcb.cern.ch:8443/srm/v2/server?SFN=/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Workflow']
 
 
-    ########### listDir after putFile ###########'
-    res = self.srm2v2storage.listDirectory( listDir )
-    self.assertEqual( res['OK'], True )
-    self.assertEqual( 'srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Workflow/FolderA/File1' in \
-                      res['Value']['Successful']['srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Workflow/FolderA']['Files'].keys(), True )
-    self.assertEqual( 'srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Workflow/FolderB/File2' in \
-                      res['Value']['Successful']['srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Workflow/FolderB']['Files'].keys(), True )
-    self.assertEqual( 'srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Workflow/File3' in \
-                      res['Value']['Successful']['srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Workflow']['Files'].keys(), True )
-    ########### listDir after removeFile ###########
-    res = self.srm2v2storage.removeFile( removeFile )
-    self.assertEqual( res['OK'], True )
+      inst.putDirectory( putDir )
+      res = inst.listDirectory( listDir )
+      self.assertEqual( res['OK'], True )
+      self.assertEqual( 'srm://srm-eoslhcb.cern.ch:8443/srm/v2/server?SFN=/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Workflow/FolderA/FileA' in \
+                        res['Value']['Successful']['srm://srm-eoslhcb.cern.ch:8443/srm/v2/server?SFN=/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Workflow/FolderA']['Files'].keys(), True )
+      self.assertEqual( 'srm://srm-eoslhcb.cern.ch:8443/srm/v2/server?SFN=/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Workflow/FolderB/FileB' in \
+                        res['Value']['Successful']['srm://srm-eoslhcb.cern.ch:8443/srm/v2/server?SFN=/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Workflow/FolderB']['Files'].keys(), True )
 
-    res = self.srm2v2storage.listDirectory( listDir )
-    self.assertEqual( res['OK'], True )
-    self.assertEqual( 'srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Workflow/FolderA/File1' in \
-                      res['Value']['Successful']['srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Workflow/FolderA']['Files'].keys(), False )
+      ###### putFile ######
+      res = inst.putFile( putFile )
+      self.assertEqual( res['OK'], True )
 
-    ########### isDir new Dir ###########
-    self.srm2v2storage.createDirectory( createDir )
-    res = self.srm2v2storage.isDirectory( createDir )
-    self.assertEqual( res['OK'], True )
-    self.assertEqual( res['Value']['Successful'][createDir[0]], True )
+      res = inst.isFile( isFile )
+      self.assertEqual( res['OK'], True )
+      self.assertEqual( res['Value']['Successful'][isFile[0]], True )
+      ####### putFile for an already existing file #######
+      res = inst.putFile( putFile )
+      self.assertEqual( res['OK'], True )
 
-    #### Try to create an already existing directory ####
-    self.srm2v2storage.createDirectory( createDir )
-    res = self.srm2v2storage.isDirectory( createDir )
-    self.assertEqual( res['OK'], True )
-    self.assertEqual( res['Value']['Successful'][createDir[0]], True )
+      res = inst.isFile( isFile )
+      self.assertEqual( res['OK'], True )
+      self.assertEqual( res['Value']['Successful'][isFile[0]], True )
 
-    ########### listDir after removing it ###########
-    self.srm2v2storage.removeDirectory( rmdir, True )
-    print 'removed dir, waiting 10seconds to check for existence'
-    time.sleep( 10 )
-    res = self.srm2v2storage.exists( rmdir )
-    self.assertEqual( res['OK'], True )
-    self.assertEqual( res['Value']['Successful'][rmdir[0]], False )
+
+      ########### listDir after putFile ###########'
+      res = inst.listDirectory( listDir )
+      self.assertEqual( res['OK'], True )
+      self.assertEqual( 'srm://srm-eoslhcb.cern.ch:8443/srm/v2/server?SFN=/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Workflow/FolderA/File1' in \
+                        res['Value']['Successful']['srm://srm-eoslhcb.cern.ch:8443/srm/v2/server?SFN=/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Workflow/FolderA']['Files'].keys(), True )
+      self.assertEqual( 'srm://srm-eoslhcb.cern.ch:8443/srm/v2/server?SFN=/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Workflow/FolderB/File2' in \
+                        res['Value']['Successful']['srm://srm-eoslhcb.cern.ch:8443/srm/v2/server?SFN=/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Workflow/FolderB']['Files'].keys(), True )
+      self.assertEqual( 'srm://srm-eoslhcb.cern.ch:8443/srm/v2/server?SFN=/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Workflow/File3' in \
+                        res['Value']['Successful']['srm://srm-eoslhcb.cern.ch:8443/srm/v2/server?SFN=/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Workflow']['Files'].keys(), True )
+      ########### listDir after removeFile ###########
+      res = inst.removeFile( removeFile )
+      self.assertEqual( res['OK'], True )
+
+      res = inst.listDirectory( listDir )
+      self.assertEqual( res['OK'], True )
+      self.assertEqual( 'srm://srm-eoslhcb.cern.ch:8443/srm/v2/server?SFN=/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Workflow/FolderA/File1' in \
+                        res['Value']['Successful']['srm://srm-eoslhcb.cern.ch:8443/srm/v2/server?SFN=/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Workflow/FolderA']['Files'].keys(), False )
+
+      ########### isDir new Dir ###########
+      inst.createDirectory( createDir )
+      res = inst.isDirectory( createDir )
+      self.assertEqual( res['OK'], True )
+      self.assertEqual( res['Value']['Successful'][createDir[0]], True )
+
+      #### Try to create an already existing directory ####
+      inst.createDirectory( createDir )
+      res = inst.isDirectory( createDir )
+      self.assertEqual( res['OK'], True )
+      self.assertEqual( res['Value']['Successful'][createDir[0]], True )
+
+      ########### listDir after removing it ###########
+      inst.removeDirectory( rmdir, True )
+      res = inst.exists( rmdir )
+      self.assertEqual( res['OK'], True )
+      self.assertEqual( res['Value']['Successful'][rmdir[0]], False )
 
 if __name__ == '__main__':
-
-
-  suite = unittest.defaultTestLoader.loadTestsFromTestCase( SRM2V2StorageTestCase )
+  suite = unittest.defaultTestLoader.loadTestsFromTestCase( SRM2V2Storage_FileQueryTests )
   # suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( SRM2V2Storage_FileQueryTests ) )
   # suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( SRM2V2Storage_FileTransferTests ) )
   # suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( SRM2V2Storage_DirectoryTransferTests ) )
   # suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( SRM2V2Storage_DirectoryQueryTests ) )
   # suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( SRM2V2Storage_TapeTests ) )
-  suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( SRM2V2Storage_WorkflowTests ) )
+  # suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( SRM2V2Storage_WorkflowTests ) )
   unittest.TextTestRunner( verbosity = 2 ).run( suite )
 
