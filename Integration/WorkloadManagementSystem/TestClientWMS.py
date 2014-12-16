@@ -474,7 +474,7 @@ class Matcher ( TestWMSTestCase ):
 
   def test_matcher( self ):
     # insert a proper DN to run the test
-    resourceDescription = {'OwnerGroup': 'diracAdmin', 'OwnerDN':'/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=cluzzi/CN=700647/CN=Cinzia Luzzi',
+    resourceDescription = {'OwnerGroup': 'diracAdmin', 'OwnerDN':'/a/MyDN',
                            'DIRACVersion': 'pippo', 'ReleaseVersion':'blabla', 'VirtualOrganization':'LHCB',
                            'PilotInfoReportedFlag':'True', 'PilotBenchmark':'anotherPilot', 'LHCbPlatform':'CERTO',
                            'Site':'DIRAC.site2.org', 'CPUTime' : 86400 }
@@ -497,7 +497,7 @@ class Matcher ( TestWMSTestCase ):
 
 
     tqDB = TaskQueueDB()
-    tqDefDict = {'OwnerDN': '/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=cluzzi/CN=700647/CN=Cinzia Luzzi',
+    tqDefDict = {'OwnerDN': '/a/MyDN',
                  'OwnerGroup':'diracAdmin', 'Setup':'DeveloperSetup', 'CPUTime':86400}
     res = tqDB.insertJob( jobID, tqDefDict, 10 )
     self.assert_( res['OK'] )
