@@ -14,6 +14,7 @@
     - JobMonitoring
     - JobStateUpdate
     - WMSAdministrator
+    - Matcher
     
     A user proxy is also needed to submit,
     and the Framework/ProxyManager need to be running with a such user proxy already uploaded.
@@ -37,6 +38,7 @@ from DIRAC.WorkloadManagementSystem.Client.WMSClient import WMSClient
 from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient import JobMonitoringClient
 from DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent import JobCleaningAgent
 from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB import PilotAgentsDB
+from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB import TaskQueueDB
 
 from DIRAC import gLogger
 
@@ -55,8 +57,6 @@ def createFile( job ):
   os.write( fd, job._toXML() )
   os.close( fd )
   return jobDescription
-
-
 
 
 class TestWMSTestCase( unittest.TestCase ):
@@ -97,9 +97,10 @@ class WMSChain( TestWMSTestCase ):
     # submit the job
     res = wmsClient.submitJob( job._toJDL( xmlFile = jobDescription ) )
     self.assert_( res['OK'] )
-    self.assertEqual( type( res['Value'] ), int )
-    self.assertEqual( res['Value'], res['JobID'] )
-    jobID = res['JobID']
+  # self.assertEqual( type( res['Value'] ), int )
+  # self.assertEqual( res['Value'], res['JobID'] )
+  # jobID = res['JobID']
+    jobID = res['Value']
 
     # updating the status
     jobStateUpdate.setJobStatus( jobID, 'Running', 'Executing Minchiapp', 'source' )
@@ -159,7 +160,8 @@ class JobMonitoring( TestWMSTestCase ):
     # submitting the job. Checking few stuff
     res = wmsClient.submitJob( job._toJDL( xmlFile = jobDescription ) )
     self.assert_( res['OK'] )
-    jobID = res['JobID']
+    jobID = int ( res['Value'] )
+    # jobID = res['JobID']
     res = jobMonitor.getJobJDL( jobID )
     self.assert_( res['OK'] )
 
@@ -168,7 +170,7 @@ class JobMonitoring( TestWMSTestCase ):
     self.assert_( res['OK'] )
     res = jobStateUpdate.setJobParameters( jobID, [( 'par1', 'par1Value' ), ( 'par2', 'par2Value' )] )
     self.assert_( res['OK'] )
-    res = jobStateUpdate.setJobApplicationStatus( jobID, 'Minchiapp status', 'source' )
+    res = jobStateUpdate.setJobApplicationStatus( jobID, 'app status', 'source' )
     self.assert_( res['OK'] )
 #     res = jobStateUpdate.setJobFlag()
 #     self.assert_( res['OK'] )
@@ -194,11 +196,11 @@ class JobMonitoring( TestWMSTestCase ):
     self.assertEqual( res['Value'], 'Site' )
     res = jobMonitor.getJobAttributes( jobID )
     self.assert_( res['OK'] )
-    self.assertEqual( res['Value']['ApplicationStatus'], 'Minchiapp status' )
+    self.assertEqual( res['Value']['ApplicationStatus'], 'app status' )
     self.assertEqual( res['Value']['JobName'], 'helloWorld' )
     res = jobMonitor.getJobSummary( jobID )
     self.assert_( res['OK'] )
-    self.assertEqual( res['Value']['ApplicationStatus'], 'Minchiapp status' )
+    self.assertEqual( res['Value']['ApplicationStatus'], 'app status' )
     self.assertEqual( res['Value']['Status'], 'Running' )
     res = jobMonitor.getJobHeartBeatData( jobID )
     self.assert_( res['OK'] )
@@ -216,7 +218,7 @@ class JobMonitoring( TestWMSTestCase ):
     self.assert_( res['OK'] )
     self.assertEqual( res['Value']['Status'], 'Done' )
     self.assertEqual( res['Value']['MinorStatus'], 'MinorStatus' )
-    self.assertEqual( res['Value']['ApplicationStatus'], 'Minchiapp status' )
+    self.assertEqual( res['Value']['ApplicationStatus'], 'app status' )
     res = jobStateUpdate.sendHeartBeat( jobID, {'bih':'bih'}, {'boh':'boh'} )
     self.assert_( res['OK'] )
 
@@ -264,7 +266,7 @@ class JobMonitoringMore( TestWMSTestCase ):
           jobDescription = createFile( job )
           res = wmsClient.submitJob( job._toJDL( xmlFile = jobDescription ) )
           self.assert_( res['OK'] )
-          jobID = res['JobID']
+          jobID = res['Value']
           jobIDs.append( jobID )
 
     res = jobMonitor.getSites()
@@ -467,6 +469,45 @@ class WMSAdministratorPilots( TestWMSTestCase ):
     self.assertEqual( res['Value'], {} )
 
 
+class Matcher ( TestWMSTestCase ):
+  "Testing Matcher"
+
+  def test_matcher( self ):
+    # insert a proper DN to run the test
+    resourceDescription = {'OwnerGroup': 'diracAdmin', 'OwnerDN':'/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=cluzzi/CN=700647/CN=Cinzia Luzzi',
+                           'DIRACVersion': 'pippo', 'ReleaseVersion':'blabla', 'VirtualOrganization':'LHCB',
+                           'PilotInfoReportedFlag':'True', 'PilotBenchmark':'anotherPilot', 'LHCbPlatform':'CERTO',
+                           'Site':'DIRAC.site2.org', 'CPUTime' : 86400 }
+    matcher = RPCClient( 'WorkloadManagement/Matcher' )
+    JobStateUpdate = RPCClient( 'WorkloadManagement/JobStateUpdate' )
+    wmsClient = WMSClient()
+
+    job = helloWorldJob()
+    job.setDestination( 'DIRAC.site2.org' )
+    job.setInputData( '/a/bbb' )
+    job.setType( 'User' )
+    jobDescription = createFile( job )
+    res = wmsClient.submitJob( job._toJDL( xmlFile = jobDescription ) )
+    self.assert_( res['OK'] )
+
+    jobID = res['Value']
+
+    res = JobStateUpdate.setJobStatus( jobID, 'Waiting', 'matching', 'source' )
+    self.assert_( res['OK'] )
+
+
+    tqDB = TaskQueueDB()
+    tqDefDict = {'OwnerDN': '/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=cluzzi/CN=700647/CN=Cinzia Luzzi',
+                 'OwnerGroup':'diracAdmin', 'Setup':'DeveloperSetup', 'CPUTime':86400}
+    res = tqDB.insertJob( jobID, tqDefDict, 10 )
+    self.assert_( res['OK'] )
+
+    res = matcher.requestJob( resourceDescription )
+    print res
+    self.assert_( res['OK'] )
+    wmsClient.deleteJob( jobID )
+
+
 
 if __name__ == '__main__':
   suite = unittest.defaultTestLoader.loadTestsFromTestCase( TestWMSTestCase )
@@ -475,4 +516,5 @@ if __name__ == '__main__':
   suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( JobMonitoringMore ) )
   suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( WMSAdministrator ) )
   suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( WMSAdministratorPilots ) )
+  suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( Matcher ) )
   testResult = unittest.TextTestRunner( verbosity = 2 ).run( suite )
