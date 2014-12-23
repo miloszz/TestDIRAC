@@ -7,6 +7,7 @@ from DIRAC import gLogger
 
 from DIRAC.Resources.Storage.SRM2V2Storage import SRM2V2Storage
 from DIRAC.Resources.Storage.SRM2Storage import SRM2Storage
+from DIRAC.Resources.Storage.StorageElement import StorageElement
 
 class SRM2V2StorageTestCase( unittest.TestCase ):
   """ Test case that sets up with the CERN-GFAL2 storage. Set up uploads 2 files (with gfal2 - not ideal) that will then be attempted to deleted by
@@ -15,16 +16,16 @@ class SRM2V2StorageTestCase( unittest.TestCase ):
   def setUp( self ):
     gLogger.setLevel( 'NOTICE' )
 
-
+    parameters = {}
     storageName = 'CERN-GFAL2'
-    protocol = 'srm'
-    path = '/eos/lhcb/grid/prod/lhcb/gfal2'
-    host = 'srm-eoslhcb.cern.ch'
-    port = '8443'
-    spaceToken = 'LHCb-EOS'
-    wspath = '/srm/v2/server?SFN='
+    parameters['Protocol'] = 'srm'
+    parameters['Path'] = '/eos/lhcb/grid/prod/lhcb/gfal2'
+    parameters['Host'] = 'srm-eoslhcb.cern.ch'
+    parameters['Port'] = '8443'
+    parameters['SpaceToken'] = 'LHCb-EOS'
+    parameters['Wspath'] = '/srm/v2/server?SFN='
 
-    self.srmplugin = SRM2V2Storage( storageName, protocol, path, host, port, spaceToken, wspath )
+    self.srmplugin = SRM2V2Storage( storageName, parameters )
     putDict = { 'srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/bsp.zip' : \
                 '/home/phi/dev/UnitTests/testfiles/bsp.zip', \
                 'srm://srm-eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/wallpaper.jpg' : \
@@ -43,15 +44,16 @@ class SRM2V2StorageTestCaseT( unittest.TestCase ):
 
   def setUp( self ):
     gLogger.setLevel( 'NOTICE' )
+    parameters = {}
     storageName = 'CERN-GFAL2'
-    protocol = 'srm'
-    path = '/eos/lhcb/grid/prod/lhcb/gfal2'
-    host = 'srm-eoslhcb.cern.ch'
-    port = '8443'
-    spaceToken = 'LHCb-EOS'
-    wspath = '/srm/v2/server?SFN='
+    parameters['Protocol'] = 'srm'
+    parameters['Path'] = '/eos/lhcb/grid/prod/lhcb/gfal2'
+    parameters['Host'] = 'srm-eoslhcb.cern.ch'
+    parameters['Port'] = '8443'
+    parameters['SpaceToken'] = 'LHCb-EOS'
+    parameters['Wspath'] = '/srm/v2/server?SFN='
 
-    self.srmplugin = SRM2V2Storage( storageName, protocol, path, host, port, spaceToken, wspath )
+    self.srmplugin = SRM2V2Storage( storageName, parameters )
 
   def tearDown( self ):
     del self.srmplugin
@@ -63,15 +65,16 @@ class SRM2StorageTestCase( unittest.TestCase ):
   def setUp( self ):
     gLogger.setLevel( 'NOTICE' )
 
+    parameters = {}
     storageName = 'CERN-GFAL2'
-    protocol = 'srm'
-    path = '/eos/lhcb/grid/prod/lhcb/gfal2'
-    host = 'srm-eoslhcb.cern.ch'
-    port = '8443'
-    spaceToken = 'LHCb-EOS'
-    wspath = '/srm/v2/server?SFN='
+    parameters['Protocol'] = 'srm'
+    parameters['Path'] = '/eos/lhcb/grid/prod/lhcb/gfal2'
+    parameters['Host'] = 'srm-eoslhcb.cern.ch'
+    parameters['Port'] = '8443'
+    parameters['SpaceToken'] = 'LHCb-EOS'
+    parameters['Wspath'] = '/srm/v2/server?SFN='
 
-    self.srmplugin = SRM2Storage( storageName, protocol, path, host, port, spaceToken, wspath )
+    self.srmplugin = SRM2V2Storage( storageName, parameters )
 
   def tearDown( self ):
     del self.srmplugin
@@ -84,15 +87,16 @@ class SRM2V2StorageTestCaseTape( unittest.TestCase ):
   def setUp( self ):
     gLogger.setLevel( 'Notice' )
 
-    storageName = 'CERN-RAW'
-    host = 'srm-lhcb.cern.ch'
-    port = '8443'
-    protocol = 'srm'
-    path = '/castor/cern.ch/grid'
-    spaceToken = 'LHCb-Tape'
-    wspath = '/srm/managerv2?SFN='
+    parameters = {}
+    storageName = 'CERN-GFAL2'
+    parameters['Protocol'] = 'srm'
+    parameters['Path'] = '/eos/lhcb/grid/prod/lhcb/gfal2'
+    parameters['Host'] = 'srm-eoslhcb.cern.ch'
+    parameters['Port'] = '8443'
+    parameters['SpaceToken'] = 'LHCb-EOS'
+    parameters['Wspath'] = '/srm/v2/server?SFN='
 
-    self.srm2v2storage = SRM2V2Storage( storageName, protocol, path, host, port, spaceToken, wspath )
+    self.srmplugin = SRM2V2Storage( storageName, parameters )
 
 
   def tearDown( self ):
@@ -621,24 +625,26 @@ class SRM2V2Storage_TapeTests( SRM2V2StorageTestCaseTape ):
     self.assertEqual( res['Value']['Successful']['B'], '456' )
     self.assertEqual( res['Value']['Failed']['C'], "SRM2V2Storage.__releaseSingleFile: Error occured: Return status < 0" )
 
-class SRM2V2Storage_WorkflowTests( SRM2V2StorageTestCase ):
+class SRM2V2Storage_WorkflowTests( unittest.TestCase ):
   def setUp( self ):
-    self.toTest = [SRM2Storage, SRM2V2Storage]
+    self.toTest = [SRM2V2Storage]
 
   def tearDown( self ):
     del self.toTest
 
   def testWorkflowTest( self ):
-    storageName = 'CERN-GFAL2'
-    protocol = 'srm'
-    path = '/eos/lhcb/grid/prod/lhcb/gfal2'
-    host = 'srm-eoslhcb.cern.ch'
-    port = '8443'
-    spaceToken = 'LHCb-EOS'
-    wspath = '/srm/v2/server?SFN='
+    parameters = {}
+    storageName = 'CERN-GFAL'
+    parameters['Protocol'] = 'srm'
+    parameters['Path'] = '/eos/lhcb/grid/prod/lhcb/gfal2'
+    parameters['Host'] = 'srm-eoslhcb.cern.ch'
+    parameters['Port'] = '8443'
+    parameters['SpaceToken'] = 'LHCb-EOS'
+    parameters['Wspath'] = '/srm/v2/server?SFN='
+
     for cls in self.toTest:
 
-      inst = cls( storageName, protocol, path, host, port, spaceToken, wspath )
+      inst = cls( storageName, parameters )
 
       putDir = { 'srm://srm-eoslhcb.cern.ch:8443/srm/v2/server?SFN=/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Workflow/FolderA' : '/home/phi/dev/UnitTests/FolderA' , \
                 'srm://srm-eoslhcb.cern.ch:8443/srm/v2/server?SFN=/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Workflow/FolderB' : '/home/phi/dev/UnitTests/FolderB' }
@@ -659,6 +665,25 @@ class SRM2V2Storage_WorkflowTests( SRM2V2StorageTestCase ):
 
       rmdir = ['srm://srm-eoslhcb.cern.ch:8443/srm/v2/server?SFN=/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Workflow']
 
+
+#       putDir = { '/lhcb/user/p/pgloor/Workflow/FolderA' : '/home/phi/dev/UnitTests/FolderA' , \
+#                 '/lhcb/user/p/pgloor/Workflow/FolderB' : '/home/phi/dev/UnitTests/FolderB' }
+#
+#       createDir = ['/lhcb/user/p/pgloor/Workflow/FolderA/FolderAA']
+#
+#       putFile = { '/lhcb/user/p/pgloor/Workflow/FolderA/File1' : '/home/phi/dev/UnitTests/File1' , \
+#                   '/lhcb/user/p/pgloor/Workflow/FolderB/File2' : '/home/phi/dev/UnitTests/File2' , \
+#                   '/lhcb/user/p/pgloor/Workflow/File3' : '/home/phi/dev/UnitTests/File3' }
+#
+#       isFile = ['/lhcb/user/p/pgloor/Workflow/FolderA/File1']
+#
+#       listDir = ['/lhcb/user/p/pgloor/Workflow', \
+#                  '/lhcb/user/p/pgloor/Workflow/FolderA', \
+#                  '/lhcb/user/p/pgloor/Workflow/FolderB']
+#
+#       removeFile = ['/lhcb/user/p/pgloor/Workflow/FolderA/File1']
+#
+#       rmdir = ['/lhcb/user/p/pgloor/Workflow']
 
       inst.putDirectory( putDir )
       res = inst.listDirectory( listDir )
@@ -720,8 +745,129 @@ class SRM2V2Storage_WorkflowTests( SRM2V2StorageTestCase ):
       self.assertEqual( res['OK'], True )
       self.assertEqual( res['Value']['Successful'][rmdir[0]], False )
 
+
+class StorageElementTestCase( unittest.TestCase ):
+  def setUp( self ):
+    self.toTest = [ 'CERN-GFAL2', 'CERN-GFAL' ]
+
+  def tearDown( self ):
+    del self.toTest
+
+  def testWorkflowTest( self ):
+    parameters = {}
+    parameters['Protocol'] = 'srm'
+    parameters['Path'] = '/eos/lhcb/grid/prod/lhcb/gfal2'
+    parameters['Host'] = 'srm-eoslhcb.cern.ch'
+    parameters['Port'] = '8443'
+    parameters['SpaceToken'] = 'LHCb-EOS'
+    parameters['Wspath'] = '/srm/v2/server?SFN='
+  
+    for seName in self.toTest:
+      inst = StorageElement( seName )
+  
+#       putDir = { 'srm://srm-eoslhcb.cern.ch:8443/srm/v2/server?SFN=/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Workflow/FolderA' : '/home/phi/dev/UnitTests/FolderA' , \
+#                 'srm://srm-eoslhcb.cern.ch:8443/srm/v2/server?SFN=/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Workflow/FolderB' : '/home/phi/dev/UnitTests/FolderB' }
+#   
+#       createDir = ['srm://srm-eoslhcb.cern.ch:8443/srm/v2/server?SFN=/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Workflow/FolderA/FolderAA']
+#   
+#       putFile = { 'srm://srm-eoslhcb.cern.ch:8443/srm/v2/server?SFN=/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Workflow/FolderA/File1' : '/home/phi/dev/UnitTests/File1' , \
+#                   'srm://srm-eoslhcb.cern.ch:8443/srm/v2/server?SFN=/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Workflow/FolderB/File2' : '/home/phi/dev/UnitTests/File2' , \
+#                   'srm://srm-eoslhcb.cern.ch:8443/srm/v2/server?SFN=/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Workflow/File3' : '/home/phi/dev/UnitTests/File3' }
+#   
+#       isFile = ['srm://srm-eoslhcb.cern.ch:8443/srm/v2/server?SFN=/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Workflow/FolderA/File1']
+#   
+#       listDir = ['srm://srm-eoslhcb.cern.ch:8443/srm/v2/server?SFN=/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Workflow', \
+#                  'srm://srm-eoslhcb.cern.ch:8443/srm/v2/server?SFN=/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Workflow/FolderA', \
+#                  'srm://srm-eoslhcb.cern.ch:8443/srm/v2/server?SFN=/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Workflow/FolderB']
+#   
+#       removeFile = ['srm://srm-eoslhcb.cern.ch:8443/srm/v2/server?SFN=/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Workflow/FolderA/File1']
+#   
+#       rmdir = ['srm://srm-eoslhcb.cern.ch:8443/srm/v2/server?SFN=/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Workflow']
+  
+
+      putDir = { '/lhcb/user/p/pgloor/Workflow/FolderA' : '/home/phi/dev/UnitTests/FolderA' , \
+                '/lhcb/user/p/pgloor/Workflow/FolderB' : '/home/phi/dev/UnitTests/FolderB' }
+
+      createDir = ['/lhcb/user/p/pgloor/Workflow/FolderA/FolderAA']
+
+      putFile = { '/lhcb/user/p/pgloor/Workflow/FolderA/File1' : '/home/phi/dev/UnitTests/File1' , \
+                  '/lhcb/user/p/pgloor/Workflow/FolderB/File2' : '/home/phi/dev/UnitTests/File2' , \
+                  '/lhcb/user/p/pgloor/Workflow/File3' : '/home/phi/dev/UnitTests/File3' }
+
+      isFile = ['/lhcb/user/p/pgloor/Workflow/FolderA/File1']
+
+      listDir = ['/lhcb/user/p/pgloor/Workflow', \
+                 '/lhcb/user/p/pgloor/Workflow/FolderA', \
+                 '/lhcb/user/p/pgloor/Workflow/FolderB']
+
+      removeFile = ['/lhcb/user/p/pgloor/Workflow/FolderA/File1']
+
+      rmdir = ['/lhcb/user/p/pgloor/Workflow']
+  
+      inst.putDirectory( putDir )
+      res = inst.listDirectory( listDir )
+      print res
+      self.assertEqual( res['OK'], True )
+      self.assertEqual( 'srm://srm-eoslhcb.cern.ch:8443/srm/v2/server?SFN=/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Workflow/FolderA/FileA' in \
+                        res['Value']['Successful']['/lhcb/user/p/pgloor/Workflow/FolderA']['Files'].keys(), True )
+      self.assertEqual( 'srm://srm-eoslhcb.cern.ch:8443/srm/v2/server?SFN=/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Workflow/FolderB/FileB' in \
+                        res['Value']['Successful']['/lhcb/user/p/pgloor/Workflow/FolderB']['Files'].keys(), True )
+  
+      ###### putFile ######
+      res = inst.putFile( putFile )
+      self.assertEqual( res['OK'], True )
+  
+      res = inst.isFile( isFile )
+      self.assertEqual( res['OK'], True )
+      self.assertEqual( res['Value']['Successful'][isFile[0]], True )
+      ####### putFile for an already existing file #######
+      res = inst.putFile( putFile )
+      self.assertEqual( res['OK'], True )
+  
+      res = inst.isFile( isFile )
+      self.assertEqual( res['OK'], True )
+      self.assertEqual( res['Value']['Successful'][isFile[0]], True )
+  
+  
+      ########### listDir after putFile ###########'
+      res = inst.listDirectory( listDir )
+      self.assertEqual( res['OK'], True )
+      self.assertEqual( 'srm://srm-eoslhcb.cern.ch:8443/srm/v2/server?SFN=/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Workflow/FolderA/File1' in \
+                        res['Value']['Successful']['/lhcb/user/p/pgloor/Workflow/FolderA']['Files'].keys(), True )
+      self.assertEqual( 'srm://srm-eoslhcb.cern.ch:8443/srm/v2/server?SFN=/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Workflow/FolderB/File2' in \
+                        res['Value']['Successful']['/lhcb/user/p/pgloor/Workflow/FolderB']['Files'].keys(), True )
+      self.assertEqual( 'srm://srm-eoslhcb.cern.ch:8443/srm/v2/server?SFN=/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Workflow/File3' in \
+                        res['Value']['Successful']['/lhcb/user/p/pgloor/Workflow']['Files'].keys(), True )
+      ########### listDir after removeFile ###########
+      res = inst.removeFile( removeFile )
+      self.assertEqual( res['OK'], True )
+  
+      res = inst.listDirectory( listDir )
+      self.assertEqual( res['OK'], True )
+      self.assertEqual( 'srm://srm-eoslhcb.cern.ch:8443/srm/v2/server?SFN=/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Workflow/FolderA/File1' in \
+                        res['Value']['Successful']['/lhcb/user/p/pgloor/Workflow/FolderA']['Files'].keys(), False )
+  
+      ########### isDir new Dir ###########
+      inst.createDirectory( createDir )
+      res = inst.isDirectory( createDir )
+      self.assertEqual( res['OK'], True )
+      self.assertEqual( res['Value']['Successful'][createDir[0]], True )
+  
+      #### Try to create an already existing directory ####
+      inst.createDirectory( createDir )
+      res = inst.isDirectory( createDir )
+      self.assertEqual( res['OK'], True )
+      self.assertEqual( res['Value']['Successful'][createDir[0]], True )
+  
+      ########### listDir after removing it ###########
+      inst.removeDirectory( rmdir, True )
+      res = inst.exists( rmdir )
+      self.assertEqual( res['OK'], True )
+      self.assertEqual( res['Value']['Successful'][rmdir[0]], False )
+
+
 if __name__ == '__main__':
-  suite = unittest.defaultTestLoader.loadTestsFromTestCase( SRM2V2Storage_FileQueryTests )
+  suite = unittest.defaultTestLoader.loadTestsFromTestCase( StorageElementTestCase )
   # suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( SRM2V2Storage_FileQueryTests ) )
   # suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( SRM2V2Storage_FileTransferTests ) )
   # suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( SRM2V2Storage_DirectoryTransferTests ) )
