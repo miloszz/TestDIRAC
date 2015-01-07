@@ -1,21 +1,12 @@
-########################################################################
-# $HeadURL$
-# File  : TestWatchdogMac.py
-# Author: Stuart Paterson
-########################################################################
+import unittest, os, threading, time
+
 from DIRAC.Core.Base import Script
 Script.parseCommandLine()
 
+from DIRAC import S_OK, S_ERROR
+from DIRAC.Core.Utilities.Subprocess import Subprocess
 from DIRAC.WorkloadManagementSystem.JobWrapper.WatchdogFactory  import WatchdogFactory
 
-import unittest,types,time,sys
-
-from DIRAC                                                 import S_OK, S_ERROR
-import os,threading,time
-
-from DIRAC.Core.Utilities.Subprocess import Subprocess
-
-import sys
 script = 'myPythonScript.py'
 
 EXECUTION_RESULT = {}
@@ -24,10 +15,7 @@ EXECUTION_RESULT = {}
 class JobWrapper:
 
   def __init__(self):
-    print "\n==========================================================="
-    print "DIRAC version TEST"
-    print "Developer tag: 0"
-    print "==========================================================="
+    pass
 
   def execute(self, executable):
     executable = os.path.expandvars(executable)
@@ -46,7 +34,7 @@ class JobWrapper:
     jobCPUTime = 60
 
     watchdogFactory = WatchdogFactory()
-    watchdogInstance = watchdogFactory.getWatchdog(pid, thread, spObject, jobCPUTime)
+    watchdogInstance = watchdogFactory.getWatchdog( pid, thread, spObject, jobCPUTime, 1000 )
     if not watchdogInstance['OK']:
       return watchdogInstance
 
@@ -67,7 +55,7 @@ class JobWrapper:
   def main(self, executable):
     currentPID = os.getpid()
     print 'Job Wrapper started under PID ',currentPID
-    result  = self.execute(executable)
+    result = self.execute( executable )
 
 #############################################################################
 
