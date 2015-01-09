@@ -100,6 +100,126 @@ function findRelease(){
 
 }
 
+
+#.............................................................................
+#
+# findSystems:
+#
+#   gets all system names from *DIRAC code and writes them to a file
+#   named systems.
+#
+#.............................................................................
+  
+function findSystems(){
+	echo '[findSystems]'
+
+	cd $WORKSPACE
+	find *DIRAC/ -name *System  | cut -d '/' -f 2 | sort | uniq > systems
+
+	echo found `wc -l systems`
+
+}
+
+
+#.............................................................................
+#
+# findDatabases:
+#
+#   gets all database names from *DIRAC code and writes them to a file
+#   named databases.
+#
+#.............................................................................
+
+function findDatabases(){
+	echo '[findDatabases]'
+
+	if [ ! -z "$1" ]
+	then
+		DBstoSearch=$1
+		if [ "$DBstoSearch" = "exclude" ]
+		then
+			echo 'excluding ' $2
+			DBstoExclude=$2
+			DBstoSearch=' '
+		fi
+	else
+		DBstoExclude='notExcluding'
+	fi
+
+	cd $WORKSPACE
+	#
+	# HACK ALERT:
+	#
+	#   We are avoiding TransferDB, which will be deprecated soon.. and FileCatalogDB for the moment
+	#
+	if [ ! -z "$DBstoExclude" ]
+	then 
+		find *DIRAC -name *DB.sql | grep -vE '(TransferDB.sql|FileCatalogDB)' | awk -F "/" '{print $2,$4}' | grep -v $DBstoExclude | sort | uniq > databases
+	else
+		find *DIRAC -name *DB.sql | grep -vE '(TransferDB.sql|FileCatalogDB)' | awk -F "/" '{print $2,$4}' | grep $DBstoSearch | sort | uniq > databases
+	fi
+
+	echo found `wc -l databases`
+}
+
+
+#-------------------------------------------------------------------------------
+# findServices:
+#
+#   gets all service names from *DIRAC code and writes them to a file
+#   named services. Needs an input for searching
+#
+#-------------------------------------------------------------------------------
+
+findServices(){
+	echo '[findServices]'
+
+
+	if [ ! -z "$1" ]
+	then
+		ServicestoSearch=$1
+		if [ "$ServicestoSearch" = "exclude" ]
+		then
+			echo 'excluding ' $2
+			ServicestoExclude=$2
+			ServicestoSearch=' '
+		fi
+	else
+		ServicestoExclude='notExcluding'
+	fi
+
+	cd $WORKSPACE
+	if [ ! -z "$ServicestoExclude" ]
+	then 
+		find *DIRAC/*/Service/ -name *Handler.py | grep -v test | awk -F "/" '{print $2,$4}' | grep -v $ServicestoExclude | sort | uniq > services
+	else
+		find *DIRAC/*/Service/ -name *Handler.py | grep -v test | awk -F "/" '{print $2,$4}' | grep $ServicestoSearch | sort | uniq > services
+	fi
+
+	echo found `wc -l services`
+}
+
+
+#-------------------------------------------------------------------------------
+# findExecutors:
+#
+#   gets all executor names from *DIRAC code and writes them to a file
+#   named executors.
+#
+#-------------------------------------------------------------------------------
+
+findExecutors(){
+	echo '[findExecutors]'
+
+	find *DIRAC/*/Executor/ -name *.py | awk -F "/" '{print $2,$4}' | sort | uniq > executors
+
+	echo found `wc -l executors`
+}
+
+
+
+
+
 #.............................................................................
 #
 # diracInstall:
