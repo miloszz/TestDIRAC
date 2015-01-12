@@ -9,6 +9,10 @@
 # 09/12/2014
 #-------------------------------------------------------------------------------
 
+# first first: sourcing utility file
+source $WORKSPACE/TestDIRAC/utilities.sh
+
+
 ############################################
 # List URLs where to get scripts
 ############################################
@@ -16,230 +20,136 @@ DIRAC_INSTALL='https://github.com/DIRACGrid/DIRAC/raw/integration/Core/scripts/d
 DIRAC_PILOT='https://raw.githubusercontent.com/DIRACGrid/DIRAC/integration/WorkloadManagementSystem/PilotAgent/dirac-pilot.py'
 DIRAC_PILOT_TOOLS='https://raw.githubusercontent.com/DIRACGrid/DIRAC/integration/WorkloadManagementSystem/PilotAgent/pilotTools.py'
 DIRAC_PILOT_COMMANDS='https://raw.githubusercontent.com/DIRACGrid/DIRAC/integration/WorkloadManagementSystem/PilotAgent/pilotCommands.py'
+DIRAC_INSTALL_SITE='https://github.com/DIRACGrid/DIRAC/raw/integration/Core/scripts/install_site.sh --no-check-certificate'
 
 DIRAC_RELEASES='https://raw.githubusercontent.com/DIRACGrid/DIRAC/integration/releases.cfg'
 ############################################
 
+INSTALL_CFG_FILE='$WORKSPACE/TestDIRAC/Jenkins/install.cfg'
 
-############################################
-# General utility functions
-############################################
 
-#.............................................................................
+#...............................................................................
 #
-# findRelease:
+# installSite:
 #
-#   If the environment variable "PRERELEASE" exists, we use a prerelease
-#   instead of a regular release ( production-like ).
-#   If any parameter is passed, we assume we are on pre-release mode, otherwise, 
-#   we assume production. It reads from releases.cfg and picks the latest version
-#   which is written to {project,dirac,lhcbdirac}.version
+#   This function will install DIRAC using the install_site.sh script 
+#     following (more or less) instructions at diracgrid.org
 #
-#.............................................................................
-  
-function findRelease(){
-	echo '[findRelease]'
+#...............................................................................
 
-	cd $WORKSPACE
+function installSite(){
+	echo '[installSite]'
+	 
+	killRunsv
+	findRelease
 
-    PRE='p[[:digit:]]*'
+	generateCertificates
 
-	if [ ! -z "$DIRACBRANCH" ]
+	#install_site.sh file
+	mkdir $WORKSPACE/DIRAC
+	cd $WORKSPACE/DIRAC
+	wget -np $DIRAC_INSTALL_SITE
+	chmod +x install_site.sh
+	
+	#Fixing install.cfg file
+	cp  $WORKSPACE/DIRAC
+	sed -i s/VAR_Release/$projectVersion/g $WORKSPACE/DIRAC/install.cfg
+	sed -i s/VAR_LcgVer/$externalsVersion/g $WORKSPACE/DIRAC/install.cfg
+	sed -i s,VAR_TargetPath,$WORKSPACE,g $WORKSPACE/DIRAC/install.cfg
+	fqdn=`hostname --fqdn`
+	sed -i s,VAR_HostDN,$fqdn,g $WORKSPACE/DIRAC/install.cfg
+	
+	sed -i s/VAR_DB_User/$DB_USER/g $WORKSPACE/DIRAC/install.cfg
+	sed -i s/VAR_DB_Password/$DB_PASSWORD/g $WORKSPACE/DIRAC/install.cfg
+	sed -i s/VAR_DB_RootUser/$DB_ROOTUSER/g $WORKSPACE/DIRAC/install.cfg
+	sed -i s/VAR_DB_RootPwd/$DB_ROOTPWD/g $WORKSPACE/DIRAC/install.cfg
+	sed -i s/VAR_DB_Host/$DB_HOST/g $WORKSPACE/DIRAC/install.cfg
+	sed -i s/VAR_DB_Port/$DB_PORT/g $WORKSPACE/DIRAC/install.cfg
+	
+	#Installing
+	./install_site.sh install.cfg
+	
+	source $WORKSPACE/bashrc
+}
+
+
+#...............................................................................
+#
+# fullInstall:
+#
+#   This function install all the DIRAC stuff known...
+#
+#...............................................................................
+
+function fullInstallDIRAC(){
+	echo '[fullInstallDIRAC]'
+	
+	finalCleanup
+	
+	if [ ! -z "$DEBUG" ]
 	then
-		echo 'Looking for DIRAC branch ' $DIRACBRANCH
-	else
-		echo 'Running on last one'
-	fi
+		echo 'Running in DEBUG mode'
+		export DEBUG='-ddd'
+	fi  
+	
+	#basic install, with only the CS running 
+	installSite
+	
+	#replace the sources with custom ones if defined
+	diracReplace
+	
+	#Dealing with security stuff
+	generateUserCredentials
+	diracCredentials
+	
+	#just add a site
+	diracAddSite
+	
+	#Install the Framework
+	findDatabases 'FrameworkSystem'
+	dropDBs
+	diracDBs
+	findServices 'FrameworkSystem'
+	diracServices
+	
+	#create groups
+	diracUserAndGroup
+	
+	#Now all the rest	
+	
+	#DBs (not looking for FrameworkSystem ones, already installed)
+	#findDatabases 'exclude' 'FrameworkSystem'
+	findDatabases 'exclude' 'FrameworkSystem'
+	dropDBs
+	diracDBs
+	
+	#services (not looking for FrameworkSystem already installed)
+	#findServices 'exclude' 'FrameworkSystem'
+	findServices 'exclude' 'FrameworkSystem'
+	diracServices
 
-	# Create temporary directory where to store releases.cfg (will be deleted then)
-	tmp_dir=`mktemp -d -q`
-	cd $tmp_dir
-	wget --no-check-certificate -O releases.cfg $DIRAC_RELEASES
+	#fix the SandboxStore 
+	python $WORKSPACE/TestDIRAC/Jenkins/dirac-cfg-update-server.py $WORKSPACE $DEBUG
+	#refresh the configuration (gConfig dark side!)
+	sleep 10
+	diracRefreshCS
+	sleep 10
+	echo 'Restarting Configuration Server'
+	dirac-restart-component Configuration Server $DEBUG
+	sleep 30
+	echo 'Restarting WorkloadManagement SandboxStore'
+	dirac-restart-component WorkloadManagement SandboxStore $DEBUG
 
-	# Match project ( DIRAC ) version from releases.cfg
-	# If I don't specify a DIRACBRANCH, it will get the latest "production" release
-    
-    # First, try to find if we are on a production tag
-	if [ ! -z "$DIRACBRANCH" ]
-	then
-    	projectVersion=`cat releases.cfg | grep [^:]v[[:digit:]]*r[[:digit:]]*p[[:digit:]]* | grep $DIRACBRANCH | head -1 | sed 's/ //g'`
-    	
-    else
-    	projectVersion=`cat releases.cfg | grep [^:]v[[:digit:]]*r[[:digit:]]*p[[:digit:]]* | head -1 | sed 's/ //g'`
-    fi
-    #    projectVersion=`cat releases.cfg | grep [^:]v[[:digit:]]r[[:digit:]]*$PRE | head -1 | sed 's/ //g'`
-	# In case there are no production tags for the branch, look for pre-releases in that branch
-	if [ ! "$projectVersion" ]
-	then
-		if [ ! -z "$DIRACBRANCH" ]
-		then
-			projectVersion=`cat releases.cfg | grep [^:]v[[:digit:]]*r[[:digit:]]*'-pre' | grep $DIRACBRANCH | head -1 | sed 's/ //g'`
-	    else
-	    	projectVersion=`cat releases.cfg | grep [^:]v[[:digit:]]*r[[:digit:]]*'-pre' | head -1 | sed 's/ //g'`
-	    fi
-    fi
-
-	projectVersionLine=`cat releases.cfg | grep -n $projectVersion | cut -d ':' -f 1 | head -1`
-	# start := line number after "{"  
-	start=$(($projectVersionLine+2))
-	# end   := line number after "}"
-	end=$(($start+2))
-	# versions :=
-	versions=`sed -n "$start,$end p" releases.cfg`
-
-	# Extract Externals version
-	externalsVersion=`echo $versions | sed s/' = '/'='/g | tr ' ' '\n' | grep Externals | cut -d '=' -f2`
-
-	# Back to $WORKSPACE and clean tmp_dir
-	cd $WORKSPACE
-	rm -r $tmp_dir
-
-    # PrintOuts
-    echo DIRAC:$projectVersion && echo $projectVersion > dirac.version
-    echo EXTERNALS:$externalsVersion && echo $externalsVersion > externals.version
-
+	#refresh the configuration (gConfig dark side!)
+	sleep 10
+	diracRefreshCS
+	sleep 10
+	
+	#upload proxies
+	diracProxies
+	# prod
 }
 
-
-#.............................................................................
-#
-# findSystems:
-#
-#   gets all system names from *DIRAC code and writes them to a file
-#   named systems.
-#
-#.............................................................................
-  
-function findSystems(){
-	echo '[findSystems]'
-
-	cd $WORKSPACE
-	find *DIRAC/ -name *System  | cut -d '/' -f 2 | sort | uniq > systems
-
-	echo found `wc -l systems`
-
-}
-
-
-#.............................................................................
-#
-# findDatabases:
-#
-#   gets all database names from *DIRAC code and writes them to a file
-#   named databases.
-#
-#.............................................................................
-
-function findDatabases(){
-	echo '[findDatabases]'
-
-	if [ ! -z "$1" ]
-	then
-		DBstoSearch=$1
-		if [ "$DBstoSearch" = "exclude" ]
-		then
-			echo 'excluding ' $2
-			DBstoExclude=$2
-			DBstoSearch=' '
-		fi
-	else
-		DBstoExclude='notExcluding'
-	fi
-
-	cd $WORKSPACE
-	#
-	# HACK ALERT:
-	#
-	#   We are avoiding TransferDB, which will be deprecated soon.. and FileCatalogDB for the moment
-	#
-	if [ ! -z "$DBstoExclude" ]
-	then 
-		find *DIRAC -name *DB.sql | grep -vE '(TransferDB.sql|FileCatalogDB)' | awk -F "/" '{print $2,$4}' | grep -v $DBstoExclude | sort | uniq > databases
-	else
-		find *DIRAC -name *DB.sql | grep -vE '(TransferDB.sql|FileCatalogDB)' | awk -F "/" '{print $2,$4}' | grep $DBstoSearch | sort | uniq > databases
-	fi
-
-	echo found `wc -l databases`
-}
-
-
-#-------------------------------------------------------------------------------
-# findServices:
-#
-#   gets all service names from *DIRAC code and writes them to a file
-#   named services. Needs an input for searching
-#
-#-------------------------------------------------------------------------------
-
-findServices(){
-	echo '[findServices]'
-
-
-	if [ ! -z "$1" ]
-	then
-		ServicestoSearch=$1
-		if [ "$ServicestoSearch" = "exclude" ]
-		then
-			echo 'excluding ' $2
-			ServicestoExclude=$2
-			ServicestoSearch=' '
-		fi
-	else
-		ServicestoExclude='notExcluding'
-	fi
-
-	cd $WORKSPACE
-	if [ ! -z "$ServicestoExclude" ]
-	then 
-		find *DIRAC/*/Service/ -name *Handler.py | grep -v test | awk -F "/" '{print $2,$4}' | grep -v $ServicestoExclude | sort | uniq > services
-	else
-		find *DIRAC/*/Service/ -name *Handler.py | grep -v test | awk -F "/" '{print $2,$4}' | grep $ServicestoSearch | sort | uniq > services
-	fi
-
-	echo found `wc -l services`
-}
-
-
-#-------------------------------------------------------------------------------
-# findExecutors:
-#
-#   gets all executor names from *DIRAC code and writes them to a file
-#   named executors.
-#
-#-------------------------------------------------------------------------------
-
-findExecutors(){
-	echo '[findExecutors]'
-
-	find *DIRAC/*/Executor/ -name *.py | awk -F "/" '{print $2,$4}' | sort | uniq > executors
-
-	echo found `wc -l executors`
-}
-
-
-
-
-
-#.............................................................................
-#
-# diracInstall:
-#
-#   This function gets the DIRAC install script defined on $DIRAC_INSTAll and
-#   runs it with some hardcoded options. The only option that varies is the 
-#   project version, in this case DIRAC version, obtained from the file 'dirac.version' 
-#   (which coincides with the project version).
-#
-#.............................................................................
-
-function diracInstall(){
-	echo '[diracInstall]'
-
-	cd $WORKSPACE
-
-	wget --no-check-certificate -O dirac-install $DIRAC_INSTALL
-	chmod +x dirac-install
-	./dirac-install -r `cat dirac.version` -t server $DEBUG
-}
 
 
 
