@@ -504,3 +504,101 @@ dropDBs(){
 	python $WORKSPACE/TestDIRAC/Jenkins/dirac-drop-db.py $dbs $DEBUG
 }
 
+
+
+#-------------------------------------------------------------------------------
+# Kill, Stop and Start scripts. Used to clean environment.
+#-------------------------------------------------------------------------------
+
+
+  #.............................................................................
+  #
+  # killRunsv:
+  #
+  #   it makes sure there are no runsv processes running. If it finds any, it
+  #   terminates it. This means, no more than one Job running this kind of test
+  #   on the same machine at the same time ( executors =< 1 ). Indeed, it cleans
+  #   two particular processes, 'runsvdir' and 'runsv'. 
+  #
+  #.............................................................................
+
+  function killRunsv(){
+    echo '[killRunsv]'
+
+    # Bear in mind that we run with 'errexit' mode. This call, if finds nothing
+    # will return an error, which will make the whole script exit. However, if 
+    # finds nothing we are good, it means there are not leftover processes from
+    # other runs. So, we disable 'errexit' mode for this call.
+    
+    #set +o errexit
+    runsvdir=`ps aux | grep 'runsvdir ' | grep -v 'grep'`
+    #set -o errexit
+  
+    if [ ! -z "$runsvdir" ]
+    then
+      killall runsvdir
+    fi   
+
+    # Same as before
+	#set +o errexit
+	runsv=`ps aux | grep 'runsv ' | grep -v 'grep'`
+	#set -o errexit
+  
+    if [ ! -z "$runsv" ]
+    then
+      killall runsv
+    fi   
+   
+  }
+
+
+  #.............................................................................
+  #
+  # stopRunsv:
+  #
+  #   if runsv is running, it stops it.
+  #
+  #.............................................................................
+
+  function stopRunsv(){
+    echo '[stopRunsv]'
+
+    # Let's try to be a bit more delicated than the function above
+
+    source $WORKSPACE/bashrc
+    runsvctrl d $WORKSPACE/startup/*
+    runsvstat $WORKSPACE/startup/*
+    
+    # If does not work, let's kill it.
+    killRunsv
+   
+  }
+
+
+  #.............................................................................
+  #
+  # startRunsv:
+  #
+  #   starts runsv processes
+  #
+  #.............................................................................
+
+  function startRunsv(){
+    echo '[startRunsv]'
+    
+    # Let's try to be a bit more delicated than the function above
+
+    source $WORKSPACE/bashrc
+    runsvdir -P $WORKSPACE/startup &
+    
+    # Gives some time to the components to start
+    sleep 10
+    # Just in case 10 secs are not enough, we disable exit on error for this call.
+    set +o errexit
+    runsvctrl u $WORKSPACE/startup/*
+    set -o errexit
+    
+    runsvstat $WORKSPACE/startup/*
+   
+  }
+
