@@ -10,7 +10,7 @@
 #-------------------------------------------------------------------------------
 
 # first first: sourcing utility file
-source $WORKSPACE/TestDIRAC/utilities.sh
+source $WORKSPACE/TestDIRAC/Jenkins/utilities.sh
 
 
 ############################################
@@ -52,7 +52,7 @@ function installSite(){
 	chmod +x install_site.sh
 	
 	#Fixing install.cfg file
-	cp  $WORKSPACE/DIRAC
+	cp $(eval echo $INSTALL_CFG_FILE) .
 	sed -i s/VAR_Release/$projectVersion/g $WORKSPACE/DIRAC/install.cfg
 	sed -i s/VAR_LcgVer/$externalsVersion/g $WORKSPACE/DIRAC/install.cfg
 	sed -i s,VAR_TargetPath,$WORKSPACE,g $WORKSPACE/DIRAC/install.cfg
