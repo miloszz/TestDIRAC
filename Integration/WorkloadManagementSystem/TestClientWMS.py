@@ -296,7 +296,7 @@ class JobMonitoringMore( TestWMSTestCase ):
     self.assert_( res['OK'] )
     res = jobMonitor.getJobs()
     self.assert_( res['OK'] )
-    self.assertEqual( sorted( res['Value'] ), [str( x ) for x in sorted( jobIDs )] )
+    self.assertEqual( sorted( res['Value'] ), sorted( [str( x ) for x in jobIDs] ) )
 #     res = jobMonitor.getCounters(attrList)
 #     self.assert_( res['OK'] )
     res = jobMonitor.getCurrentJobCounters()
@@ -365,6 +365,7 @@ class WMSAdministrator( TestWMSTestCase ):
     self.assertEqual( res['Value']['My.Site.org'], 'Active' )
 
     res = wmsAdministrator.getUserSummaryWeb( {}, [], 0, 100 )
+    print res
     self.assert_( res['OK'] )
     self.assertEqual( res['Value']['TotalRecords'], 0 )
     res = wmsAdministrator.getSiteSummaryWeb( {}, [], 0, 100 )
@@ -474,16 +475,16 @@ class Matcher ( TestWMSTestCase ):
 
   def test_matcher( self ):
     # insert a proper DN to run the test
-    resourceDescription = {'OwnerGroup': 'diracAdmin', 'OwnerDN':'/a/MyDN',
+    resourceDescription = {'OwnerGroup': 'prod', 'OwnerDN':'/C=ch/O=DIRAC/OU=DIRAC CI/CN=ciuser/emailAddress=lhcb-dirac-ci@cern.ch',
                            'DIRACVersion': 'pippo', 'ReleaseVersion':'blabla', 'VirtualOrganization':'LHCB',
                            'PilotInfoReportedFlag':'True', 'PilotBenchmark':'anotherPilot', 'LHCbPlatform':'CERTO',
-                           'Site':'DIRAC.site2.org', 'CPUTime' : 86400 }
+                           'Site':'DIRAC.Jenkins.org', 'CPUTime' : 86400 }
     matcher = RPCClient( 'WorkloadManagement/Matcher' )
     JobStateUpdate = RPCClient( 'WorkloadManagement/JobStateUpdate' )
     wmsClient = WMSClient()
 
     job = helloWorldJob()
-    job.setDestination( 'DIRAC.site2.org' )
+    job.setDestination( 'DIRAC.Jenkins.org' )
     job.setInputData( '/a/bbb' )
     job.setType( 'User' )
     jobDescription = createFile( job )
@@ -497,8 +498,8 @@ class Matcher ( TestWMSTestCase ):
 
 
     tqDB = TaskQueueDB()
-    tqDefDict = {'OwnerDN': '/a/MyDN',
-                 'OwnerGroup':'diracAdmin', 'Setup':'DeveloperSetup', 'CPUTime':86400}
+    tqDefDict = {'OwnerDN': '/C=ch/O=DIRAC/OU=DIRAC CI/CN=ciuser/emailAddress=lhcb-dirac-ci@cern.ch',
+                 'OwnerGroup':'prod', 'Setup':'DeveloperSetup', 'CPUTime':86400}
     res = tqDB.insertJob( jobID, tqDefDict, 10 )
     self.assert_( res['OK'] )
 
