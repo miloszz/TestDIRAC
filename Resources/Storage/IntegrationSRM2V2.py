@@ -105,6 +105,23 @@ class SRM2V2StorageTestCaseTape( unittest.TestCase ):
 
 
 class SRM2V2Storage_FileQueryTests( SRM2V2StorageTestCase ):
+  
+  def setUp( self ):
+    gLogger.setLevel( 'NOTICE' )
+
+    parameters = {}
+    storageName = 'CERN-GFAL2'
+    parameters['Protocol'] = 'srm'
+    parameters['Path'] = '/eos/lhcb/grid/prod/lhcb/gfal2'
+    parameters['Host'] = 'srm-eoslhcb.cern.ch'
+    parameters['Port'] = '8443'
+    parameters['SpaceToken'] = 'LHCb-EOS'
+    parameters['Wspath'] = '/srm/v2/server?SFN='
+
+    self.srmplugin = SRM2V2Storage( storageName, parameters )
+
+  def tearDown( self ):
+    del self.srmplugin
 #
 #   def testExists( self ):
 #     # Files exist
