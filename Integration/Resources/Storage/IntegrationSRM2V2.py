@@ -767,7 +767,7 @@ class SRM2V2Storage_WorkflowTests( unittest.TestCase ):
 
 class StorageElementTestCase( unittest.TestCase ):
   def setUp( self ):
-    self.toTest = [ 'CERN-GFAL2', 'CERN-GFAL' ]
+    self.toTest = [ 'CERN-GFAL' ]
 
   def tearDown( self ):
     del self.toTest
@@ -839,6 +839,11 @@ class StorageElementTestCase( unittest.TestCase ):
       res = inst.isFile( isFile )
       self.assertEqual( res['OK'], True )
       self.assertEqual( res['Value']['Successful'][isFile[0]], True )
+
+      res = inst.getTransportURL( isFile, 'gsiftp' )
+      self.assertEqual( res['OK'], True )
+      self.assertEqual( res['Value']['Successful'][isFile[0]], 'gsiftp://eoslhcbftp.cern.ch//eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Workflow/FolderA/File1' )
+
       ####### putFile for an already existing file #######
       res = inst.putFile( putFile )
       self.assertEqual( res['OK'], True )
@@ -897,14 +902,115 @@ class XROOT_GFALTestCase( unittest.TestCase ):
     self.se = GFAL2_XROOTStorage( storageName, parameters )
 
   def tearDown( self ):
-    del self.se
+    pass
 
-  def testTransportURL( self ):
-    urlToTest1 = ['/lhcb/user/p/pgloor/Folder/wallpaper3.jpg']
-    urlToTest2 = 'root://eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Folder/wallpaper3.jpg'
-    res = self.se.getTransportURL( urlToTest2, 'root' )
+  def testExists( self ):
+
+
+    putDir = { 'root://eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Workflow/FolderA' : '/home/phi/dev/UnitTests/FolderA' , \
+                'root://eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Workflow/FolderB' : '/home/phi/dev/UnitTests/FolderB' }
+
+    createDir = ['root://eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Workflow/FolderA/FolderAA']
+
+    putFile = { 'root://eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Workflow/FolderA/File1' : '/home/phi/dev/UnitTests/File1' , \
+                'root://eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Workflow/FolderB/File2' : '/home/phi/dev/UnitTests/File2' , \
+                'root://eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Workflow/File3' : '/home/phi/dev/UnitTests/File3' }
+
+    isFile = ['root://eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Workflow/FolderA/File1']
+
+    listDir = ['root://eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Workflow', \
+               'root://eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Workflow/FolderA', \
+               'root://eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Workflow/FolderB']
+
+    removeFile = ['root://eoslhcb.cern.ch//eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Workflow/FolderA/File1']
+
+    rmdir = ['root://eoslhcb.cern.ch//eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Workflow']
+
+
+#       putDir = { '/lhcb/user/p/pgloor/Workflow/FolderA' : '/home/phi/dev/UnitTests/FolderA' , \
+#                 '/lhcb/user/p/pgloor/Workflow/FolderB' : '/home/phi/dev/UnitTests/FolderB' }
+#
+#       createDir = ['/lhcb/user/p/pgloor/Workflow/FolderA/FolderAA']
+#
+#       putFile = { '/lhcb/user/p/pgloor/Workflow/FolderA/File1' : '/home/phi/dev/UnitTests/File1' , \
+#                   '/lhcb/user/p/pgloor/Workflow/FolderB/File2' : '/home/phi/dev/UnitTests/File2' , \
+#                   '/lhcb/user/p/pgloor/Workflow/File3' : '/home/phi/dev/UnitTests/File3' }
+#
+#       isFile = ['/lhcb/user/p/pgloor/Workflow/FolderA/File1']
+#
+#       listDir = ['/lhcb/user/p/pgloor/Workflow', \
+#                  '/lhcb/user/p/pgloor/Workflow/FolderA', \
+#                  '/lhcb/user/p/pgloor/Workflow/FolderB']
+#
+#       removeFile = ['/lhcb/user/p/pgloor/Workflow/FolderA/File1']
+#
+#       rmdir = ['/lhcb/user/p/pgloor/Workflow']
+
+    self.se.putDirectory( putDir )
+    res = self.se.listDirectory( listDir )
     self.assertEqual( res['OK'], True )
-    self.assertEqual( res['Value']['Successful'][urlToTest2], 'root://eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Folder/wallpaper3.jpg' )
+    # self.assertEqual( 'root://eoslhcb.cern.ch//eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Workflow/FolderA/FileA' in \
+    #                  res['Value']['Successful']['root://eoslhcb.cern.ch/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Workflow/FolderA']['Files'].keys(), True )
+    # self.assertEqual( 'root://eoslhcb.cern.ch//eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Workflow/FolderB/FileB' in \
+    #                 res['Value']['Successful']['root://eoslhcb.cern.ch//eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Workflow/FolderB']['Files'].keys(), True )
+
+    ###### putFile ######
+    res = self.se.putFile( putFile )
+    self.assertEqual( res['OK'], True )
+
+    res = self.se.isFile( isFile )
+    self.assertEqual( res['OK'], True )
+    self.assertEqual( res['Value']['Successful'][isFile[0]], True )
+
+#     res = self.se.getTransportURL( isFile, 'root' )
+#     self.assertEqual( res['OK'], True )
+#     self.assertEqual( res['Value']['Successful'][isFile[0]], 'root://eoslhcbftp.cern.ch//eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Workflow/FolderA/File1' )
+
+    ####### putFile for an already existing file #######
+    res = self.se.putFile( putFile )
+    self.assertEqual( res['OK'], True )
+
+    res = self.se.isFile( isFile )
+    self.assertEqual( res['OK'], True )
+    self.assertEqual( res['Value']['Successful'][isFile[0]], True )
+
+
+    ########### listDir after putFile ###########'
+#     res = self.se.listDirectory( listDir )
+#     self.assertEqual( res['OK'], True )
+#     self.assertEqual( 'root://eoslhcb.cern.ch//eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Workflow/FolderA/File1' in \
+#                       res['Value']['Successful']['root://eoslhcb.cern.ch//eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Workflow/FolderA']['Files'].keys(), True )
+#     self.assertEqual( 'root://eoslhcb.cern.ch//eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Workflow/FolderB/File2' in \
+#                       res['Value']['Successful']['root://eoslhcb.cern.ch//eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Workflow/FolderB']['Files'].keys(), True )
+#     self.assertEqual( 'root://eoslhcb.cern.ch//eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Workflow/File3' in \
+#                       res['Value']['Successful']['root://eoslhcb.cern.ch//eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Workflow']['Files'].keys(), True )
+    ########### listDir after removeFile ###########
+    res = self.se.removeFile( removeFile )
+    self.assertEqual( res['OK'], True )
+
+#     res = self.se.listDirectory( listDir )
+#     self.assertEqual( res['OK'], True )
+#     self.assertEqual( 'root://eoslhcb.cern.ch//eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Workflow/FolderA/File1' in \
+#                       res['Value']['Successful']['root://eoslhcb.cern.ch//eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Workflow/FolderA']['Files'].keys(), False )
+
+    ########### isDir new Dir ###########
+    self.se.createDirectory( createDir )
+    res = self.se.isDirectory( createDir )
+    self.assertEqual( res['OK'], True )
+    self.assertEqual( res['Value']['Successful'][createDir[0]], True )
+
+    #### Try to create an already existing directory ####
+    self.se.createDirectory( createDir )
+    res = self.se.isDirectory( createDir )
+    self.assertEqual( res['OK'], True )
+    self.assertEqual( res['Value']['Successful'][createDir[0]], True )
+
+    ########### listDir after removing it ###########
+    res = self.se.removeDirectory( rmdir, True )
+    print res
+    res = self.se.exists( rmdir )
+    self.assertEqual( res['OK'], True )
+    self.assertEqual( res['Value']['Successful'][rmdir[0]], False )
 
 class SRM_GFALTestCase( unittest.TestCase ):
   def setUp( self ):
@@ -971,7 +1077,6 @@ class SRM_GFALTestCase( unittest.TestCase ):
     self.assertEqual( 'srm://srm-eoslhcb.cern.ch:8443/srm/v2/server?SFN=/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Workflow/FolderB/FileB' in \
                       res['Value']['Successful']['srm://srm-eoslhcb.cern.ch:8443/srm/v2/server?SFN=/eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Workflow/FolderB']['Files'].keys(), True )
 
-    print 'putFile'
     ###### putFile ######
     res = se.putFile( putFile )
     self.assertEqual( res['OK'], True )
@@ -979,6 +1084,11 @@ class SRM_GFALTestCase( unittest.TestCase ):
     res = se.isFile( isFile )
     self.assertEqual( res['OK'], True )
     self.assertEqual( res['Value']['Successful'][isFile[0]], True )
+
+    res = se.getTransportURL( isFile, 'gsiftp' )
+    self.assertEqual( res['OK'], True )
+    self.assertEqual( res['Value']['Successful'][isFile[0]], 'gsiftp://eoslhcbftp.cern.ch//eos/lhcb/grid/prod/lhcb/gfal2/lhcb/user/p/pgloor/Workflow/FolderA/File1' )
+
     ####### putFile for an already existing file #######
     res = se.putFile( putFile )
     self.assertEqual( res['OK'], True )
@@ -1025,6 +1135,7 @@ class SRM_GFALTestCase( unittest.TestCase ):
     self.assertEqual( res['Value']['Successful'][rmdir[0]], False )
 
 if __name__ == '__main__':
+  # suite = unittest.defaultTestLoader.loadTestsFromTestCase( XROOT_GFALTestCase )
   suite = unittest.defaultTestLoader.loadTestsFromTestCase( SRM_GFALTestCase )
   # suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( SRM2V2Storage_FileQueryTests ) )
   # suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( SRM2V2Storage_FileTransferTests ) )
