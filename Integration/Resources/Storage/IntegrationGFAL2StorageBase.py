@@ -42,7 +42,7 @@ class basicTest( unittest.TestCase ):
     res = res['Value']
     self.assertEqual( res['Successful'][path[0]], 520484 )
     self.assertEqual( res['Failed'][path[1]], "GFAL2StorageBase.__isSingleFile: File does not exist." )
-    self.assertEqual( res['Failed'][path[2]], 'GFAL2StorageBase.__getSingleFileSize: path is not a file  ' )
+    self.assertEqual( res['Failed'][path[2]], 'GFAL2StorageBase.__getSingleFileSize: path is not a file' )
 
   def testisFile( self ):
     # file exists
@@ -61,18 +61,58 @@ class basicTest( unittest.TestCase ):
 
     # path is not a file
 
+  def testWorkflow( self ):
+    putDir = { '/lhcb/user/p/pgloor/Workflow/FolderA' : '/home/phi/dev/UnitTests/FolderA' , \
+          '/lhcb/user/p/pgloor/Workflow/FolderB' : '/home/phi/dev/UnitTests/FolderB' }
+
+    createDir = ['/lhcb/user/p/pgloor/Workflow/FolderA/FolderAA']
+
+    putFile = { '/lhcb/user/p/pgloor/Workflow/FolderA/File1' : '/home/phi/dev/UnitTests/File1' , \
+                '/lhcb/user/p/pgloor/Workflow/FolderB/File2' : '/home/phi/dev/UnitTests/File2' , \
+                '/lhcb/user/p/pgloor/Workflow/File3' : '/home/phi/dev/UnitTests/File3' }
+
+    isFile = ['/lhcb/user/p/pgloor/Workflow/FolderA/File1']
+
+    listDir = ['/lhcb/user/p/pgloor/Workflow', \
+               '/lhcb/user/p/pgloor/Workflow/FolderA', \
+               '/lhcb/user/p/pgloor/Workflow/FolderB']
+
+    removeFile = ['/lhcb/user/p/pgloor/Workflow/FolderA/File1']
+    rmdir = ['/lhcb/user/p/pgloor/Workflow']
+
+    ########## uploading directory #############
+    res = self.tbt.putDirectory( putDir )
+    print res
+    self.assertEqual( res['OK'], True )
+
+
+    ######## putFile ########
+    res = self.tbt.putFile( putFile )
+    self.assertEqual( res['OK'], True )
+
+    res = self.tbt.isFile( isFile )
+    self.assertEqual( res['OK'], True )
+    self.assertEqual( res['Value']['Successful'][isFile[0]], True )
+
+
+    ########### removing directory  ###########
+    self.tbt.removeDirectory( rmdir, True )
+    res = self.tbt.exists( rmdir )
+    self.assertEqual( res['OK'], True )
+    self.assertEqual( res['Value']['Successful'][rmdir[0]], False )
+
 class SRM2V2Test( basicTest ):
 
   def setUp( self ):
     basicTest.setUp( self )
-    self.tbt = StorageElement( self.storageName, 'SRM2V2' )
+    self.tbt = StorageElement( self.storageName, protocols = 'SRM2V2' )
 
 
 class XROOTTest( basicTest ):
 
   def setUp( self ):
     basicTest.setUp( self )
-    self.tbt = StorageElement( self.storageName, 'GFAL2_XROOT' )
+    self.tbt = StorageElement( self.storageName, protocols = 'GFAL2_XROOT' )
 
 
 if __name__ == '__main__':
