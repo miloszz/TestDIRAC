@@ -63,4 +63,49 @@ localCfg.setOption( 'Resources/StorageElements/ProductionSandboxSE/AccessProtoco
 localCfg.setOption( 'Resources/StorageElements/ProductionSandboxSE/AccessProtocol.1/Path', '%s/sandboxes' % setupName )
 localCfg.setOption( 'Resources/StorageElements/ProductionSandboxSE/AccessProtocol.1/Access', 'remote' )
 
+
+
+# Setup the DFC
+#
+# DataManagement
+# {
+#   Production
+#   {
+#     Services
+#     {
+#       FileCatalog
+#       {
+#         DirectoryManager = DirectoryClosure
+#         FileManager = FileManagerPS
+#         SecurityManager = FullSecurityManager
+#       }
+#     }
+#     Databases
+#       {
+#         FileCatalogDB
+#         {
+#           DBName = FileCatalogDB
+#         }
+#       }
+#   }
+# }
+
+
+for sct in ['Systems/DataManagement',
+            'Systems/DataManagement/Production',
+            'Systems/DataManagement/Production/URLs',
+            'Systems/DataManagement/Production/Services',
+            'Systems/DataManagement/Production/Services/FileCatalog',
+            'Systems/DataManagement/Production/Databases',
+            'Systems/DataManagement/Production/Databases/FileCatalogDB', ]:
+  if not localCfg.existsKey( sct ):
+    localcfg.createNewSection( sct )
+
+localCfg.setOption( 'Systems/DataManagement/Production/Services/FileCatalog/DirectoryManager', 'DirectoryClosure' )
+localCfg.setOption( 'Systems/DataManagement/Production/Services/FileCatalog/FileManager', 'FileManagerPs' )
+localCfg.setOption( 'Systems/DataManagement/Production/Services/FileCatalog/SecurityManager', 'FullSecurityManager' )
+
+localCfg.setOption( 'Systems/DataManagement/Production/Databases/FileCatalogDB/DBName', 'FileCatalogDB' )
+
+
 localCfg.writeToFile( localConfigFile )

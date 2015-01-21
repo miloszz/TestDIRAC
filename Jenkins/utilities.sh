@@ -138,9 +138,9 @@ function findDatabases(){
 	#
 	if [ ! -z "$DBstoExclude" ]
 	then 
-		find *DIRAC -name *DB.sql | grep -vE '(TransferDB.sql|FileCatalogDB)' | awk -F "/" '{print $2,$4}' | grep -v $DBstoExclude | sort | uniq > databases
+		find *DIRAC -name *DB.sql | grep -vE '(TransferDB.sql|FileCatalogDB|FileCatalogWithFkAndPsDB)' | awk -F "/" '{print $2,$4}' | grep -v $DBstoExclude | sort | uniq > databases
 	else
-		find *DIRAC -name *DB.sql | grep -vE '(TransferDB.sql|FileCatalogDB)' | awk -F "/" '{print $2,$4}' | grep $DBstoSearch | sort | uniq > databases
+		find *DIRAC -name *DB.sql | grep -vE '(TransferDB.sql|FileCatalogDB|FileCatalogWithFkAndPsDB)' | awk -F "/" '{print $2,$4}' | grep $DBstoSearch | sort | uniq > databases
 	fi
 
 	echo found `wc -l databases`
@@ -495,6 +495,9 @@ diracDBs(){
 		dirac-install-db $db $DEBUG
 	done
 
+	# Install manualy the DFC
+	mysql -u $DB_ROOTUSER -p $DB_ROOTPWD -h $DB_HOST -P $DB_PORT < $(find DIRAC -name "FileCatalogWithFkAndPsDB.sql")
+
 }
 
 dropDBs(){
@@ -502,6 +505,8 @@ dropDBs(){
 	
 	dbs=`cat databases | cut -d ' ' -f 2 | cut -d '.' -f 1 | grep -v ^RequestDB`
 	python $WORKSPACE/TestDIRAC/Jenkins/dirac-drop-db.py $dbs $DEBUG
+        mysql -u $DB_ROOTUSER -p $DB_ROOTPWD -h $DB_HOST -P $DB_PORT -e "DROP DATABASE FileCatalogDB;"
+
 }
 
 
