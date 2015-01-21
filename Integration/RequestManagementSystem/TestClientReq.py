@@ -4,6 +4,9 @@
     It supposes that the DB is present, and that the service is running
 """
 
+from DIRAC.Core.Base.Script import parseCommandLine
+parseCommandLine()
+
 import unittest
 
 from DIRAC import gLogger
@@ -226,7 +229,7 @@ class ReqClientMix( ReqClientTestCase ):
     startTime = time.time()
 
     for i in range( loops ):
-      get = db.getRequests( self.bulkRequest, True )
+      get = db.getBulkRequests( self.bulkRequest, True )
       if "Message" in get:
         print get["Message"]
       self.assertEqual( get["OK"], True, "get failed" )
