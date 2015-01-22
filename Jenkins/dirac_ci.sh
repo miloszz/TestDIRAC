@@ -123,16 +123,18 @@ function fullInstallDIRAC(){
 	dropDBs
 	diracDBs
 
+	diracDFCDB
+	
 	#fix the DBs 
 	python $WORKSPACE/TestDIRAC/Jenkins/dirac-cfg-update-dbs.py $WORKSPACE $DEBUG
 	#refresh the configuration (gConfig dark side!)
 	sleep 10
-	diracRefreshCS
+	#diracRefreshCS
 	sleep 10
-	echo 'Restarting Configuration Server'
+	#echo 'Restarting Configuration Server'
 	dirac-restart-component Configuration Server $DEBUG
 	sleep 30
-
+	
 	#services (not looking for FrameworkSystem already installed)
 	#findServices 'exclude' 'FrameworkSystem'
 	findServices 'exclude' 'FrameworkSystem'
