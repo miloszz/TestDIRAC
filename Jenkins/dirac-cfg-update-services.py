@@ -56,18 +56,16 @@ localCfg.loadFromFile( localConfigFile )
 # }
 
 
-for sct in ['Systems/DataManagement',
-            'Systems/DataManagement/Production',
-            'Systems/DataManagement/Production/Databases',
-            'Systems/DataManagement/Production/Databases/FileCatalogDB', ]:
+for sct in ['Systems/DataManagement/Production/Services',
+            'Systems/DataManagement/Production/Services/FileCatalog' ]:
   if not localCfg.existsKey( sct ):
     try:
       localCfg.createNewSection( sct )
     except KeyError:
       continue
 
-localCfg.setOption( 'Systems/DataManagement/Production/Databases/FileCatalogDB/DBName', 'FileCatalogDB' )
-localCfg.setOption( 'Systems/DataManagement/Production/Databases/FileCatalogDB/Host', 'dbod-dirac-ci.cern.ch' )
-localCfg.setOption( 'Systems/DataManagement/Production/Databases/FileCatalogDB/Port', '5501' )
+localCfg.setOption( 'Systems/DataManagement/Production/Services/FileCatalog/DirectoryManager', 'DirectoryClosure' )
+localCfg.setOption( 'Systems/DataManagement/Production/Services/FileCatalog/FileManager', 'FileManagerPs' )
+localCfg.setOption( 'Systems/DataManagement/Production/Services/FileCatalog/SecurityManager', 'FullSecurityManager' )
 
 localCfg.writeToFile( localConfigFile )

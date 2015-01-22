@@ -495,7 +495,7 @@ diracDBs(){
 		dirac-install-db $db $DEBUG
 	done
 
-	# Install manualy the DFC
+	# Install manually the DFC
 	mysql -u $DB_ROOTUSER -p $DB_ROOTPWD -h $DB_HOST -P $DB_PORT < $(find DIRAC -name "FileCatalogWithFkAndPsDB.sql")
 
 }
