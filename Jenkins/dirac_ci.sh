@@ -138,6 +138,16 @@ function fullInstallDIRAC(){
 	findServices 'exclude' 'FrameworkSystem'
 	diracServices
 
+	#fix the services 
+	python $WORKSPACE/TestDIRAC/Jenkins/dirac-cfg-update-services.py $WORKSPACE $DEBUG
+	#refresh the configuration (gConfig dark side!)
+	sleep 10
+	diracRefreshCS
+	sleep 10
+	echo 'Restarting Configuration Server'
+	dirac-restart-component Configuration Server $DEBUG
+	sleep 30
+	
 	#fix the SandboxStore 
 	python $WORKSPACE/TestDIRAC/Jenkins/dirac-cfg-update-server.py $WORKSPACE $DEBUG
 	#refresh the configuration (gConfig dark side!)
