@@ -99,13 +99,14 @@ for sct in ['Systems/DataManagement',
             'Systems/DataManagement/Production/Databases',
             'Systems/DataManagement/Production/Databases/FileCatalogDB', ]:
   if not localCfg.existsKey( sct ):
-    localcfg.createNewSection( sct )
+    localCfg.createNewSection( sct )
 
 localCfg.setOption( 'Systems/DataManagement/Production/Services/FileCatalog/DirectoryManager', 'DirectoryClosure' )
 localCfg.setOption( 'Systems/DataManagement/Production/Services/FileCatalog/FileManager', 'FileManagerPs' )
 localCfg.setOption( 'Systems/DataManagement/Production/Services/FileCatalog/SecurityManager', 'FullSecurityManager' )
 
 localCfg.setOption( 'Systems/DataManagement/Production/Databases/FileCatalogDB/DBName', 'FileCatalogDB' )
-
+localCfg.setOption( 'Systems/DataManagement/Production/Databases/FileCatalogDB/Host', 'dbod-dirac-ci.cern.ch' )
+localCfg.setOption( 'Systems/DataManagement/Production/Databases/FileCatalogDB/Port', '5501' )
 
 localCfg.writeToFile( localConfigFile )
