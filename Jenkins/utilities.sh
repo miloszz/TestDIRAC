@@ -134,7 +134,7 @@ function findDatabases(){
 	#
 	# HACK ALERT:
 	#
-	#   We are avoiding TransferDB, which will be deprecated soon.. and FileCatalogDB for the moment
+	#   We are avoiding TransferDB, which will be deprecated soon.. and FileCatalogWithFkAndPsDB for the moment which is installed in other ways
 	#
 	if [ ! -z "$DBstoExclude" ]
 	then 
@@ -495,10 +495,14 @@ diracDBs(){
 		dirac-install-db $db $DEBUG
 	done
 
-	# Install manually the DFC
-	mysql -u $DB_ROOTUSER -p $DB_ROOTPWD -h $DB_HOST -P $DB_PORT < $(find DIRAC -name "FileCatalogWithFkAndPsDB.sql")
-
 }
+
+# Install manually the DFC
+diracDFCDB(){
+	mysql -u $DB_ROOTUSER -p $DB_ROOTPWD -h $DB_HOST -P $DB_PORT < $(find DIRAC -name "FileCatalogWithFkAndPsDB.sql")
+}
+
+# drop DBs
 
 dropDBs(){
 	echo '[dropDBs]'
