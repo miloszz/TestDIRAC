@@ -67,7 +67,7 @@ for sct in ['Systems/DataManagement',
       continue
 
 localCfg.setOption( 'Systems/DataManagement/Production/Databases/FileCatalogDB/DBName', 'FileCatalogDB' )
-localCfg.setOption( 'Systems/DataManagement/Production/Databases/FileCatalogDB/Host', 'dbod-dirac-ci.cern.ch' )
+localCfg.setOption( 'Systems/DataManagement/Production/Databases/FileCatalogDB/Host', 'db-50098.cern.ch' )
 localCfg.setOption( 'Systems/DataManagement/Production/Databases/FileCatalogDB/Port', '5501' )
 
 localCfg.writeToFile( localConfigFile )
