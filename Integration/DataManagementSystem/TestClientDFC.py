@@ -9,6 +9,8 @@ import unittest
 
 from DIRAC.Resources.Catalog.FileCatalogClient import FileCatalogClient
 
+from DIRAC.Core.Base.Script import parseCommandLine
+parseCommandLine()
 
 
 seName = "mySE"
