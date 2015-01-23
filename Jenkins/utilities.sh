@@ -501,7 +501,7 @@ diracDBs(){
 diracDFCDB(){
 	echo '[diracDFCDB]'
 	
-	mysql -u$DB_ROOTUSER -p$DB_ROOTPWD -h$DB_HOST -P$DB_PORT < $WORKSPACE/DIRAC/DataManagementSystem/DB/FileCatalogWithFkAndPsDB.sql
+	mysql -u$DB_ROOTUSER -p$DB_ROOTPWD -h$DB_HOST -P$DB_PORT < sed s/to_be_changed/$DB_PASSWORD/ < $WORKSPACE/DIRAC/DataManagementSystem/DB/FileCatalogWithFkAndPsDB.sql
 }
 
 # drop DBs
