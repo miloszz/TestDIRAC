@@ -499,7 +499,9 @@ diracDBs(){
 
 # Install manually the DFC
 diracDFCDB(){
-	mysql -u $DB_ROOTUSER -p $DB_ROOTPWD -h $DB_HOST -P $DB_PORT < $(find DIRAC -name "FileCatalogWithFkAndPsDB.sql")
+	echo '[diracDFCDB]'
+	
+	mysql -u$DB_ROOTUSER -p$DB_ROOTPWD -h$DB_HOST -P$DB_PORT < $WORKSPACE/DIRAC/DataManagementSystem/DB/FileCatalogWithFkAndPsDB.sql
 }
 
 # drop DBs
