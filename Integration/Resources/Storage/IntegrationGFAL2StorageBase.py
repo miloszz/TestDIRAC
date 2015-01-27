@@ -13,88 +13,13 @@ class basicTest( unittest.TestCase ):
     self.storageName = 'CERN-GFAL2'
     self.tbt = None
 
-#   def testgetFileSize( self ):
-#     # file exists
-#     path = '/lhcb/user/p/pgloor/wallpaper.jpg'
-#     res = self.tbt.getFileSize( path )
-#     self.assertEqual( res['OK'], True )
-#     res = res['Value']
-#     self.assertEqual( res['Successful'][path], 520484 )
-#
-#     # file does not exist
-#     path = '/lhcb/user/p/pgloor/wallpaper3.jpg'
-#     res = self.tbt.getFileSize( path )
-#     self.assertEqual( res['OK'], True )
-#     res = res['Value']
-#     self.assertEqual( res['Failed'][path], "GFAL2StorageBase.__isSingleFile: File does not exist." )
-#
-#     # path is not a file
-#     path = '/lhcb/user/p/pgloor/'
-#     res = self.tbt.getFileSize( path )
-#     self.assertEqual( res['OK'], True )
-#     res = res['Value']
-#     self.assertEqual( res['Failed'][path], 'GFAL2StorageBase.__getSingleFileSize: path is not a file' )
-#
-#     # multi-input
-#     path = [ '/lhcb/user/p/pgloor/wallpaper.jpg', '/lhcb/user/p/pgloor/wallpaper3.jpg', '/lhcb/user/p/pgloor/' ]
-#     res = self.tbt.getFileSize( path )
-#     self.assertEqual( res['OK'], True )
-#     res = res['Value']
-#     self.assertEqual( res['Successful'][path[0]], 520484 )
-#     self.assertEqual( res['Failed'][path[1]], "GFAL2StorageBase.__isSingleFile: File does not exist." )
-#     self.assertEqual( res['Failed'][path[2]], 'GFAL2StorageBase.__getSingleFileSize: path is not a file' )
-#
-#   def testisFile( self ):
-#     # file exists
-#     path = '/lhcb/user/p/pgloor/wallpaper.jpg'
-#     res = self.tbt.isFile( path )
-#     self.assertEqual( res['OK'], True )
-#     res = res['Value']
-#     self.assertEqual( res['Successful'][path], True )
-#
-#     # file does not exist
-#     path = '/lhcb/user/p/pgloor/wallpaper3.jpg'
-#     res = self.tbt.isFile( path )
-#     self.assertEqual( res['OK'], True )
-#     res = res['Value']
-#     self.assertEqual( res['Failed'][path], "GFAL2StorageBase.__isSingleFile: File does not exist." )
-#
-#   def testremoveDirectory( self ):
-#     path = '/lhcb/user/p/pgloor/Workflow'
-#     res = self.tbt.createDirectory( path )
-#     self.assertEqual( res['OK'], True )
-#     res = self.tbt.removeDirectory( path, True )
-#     self.assertEqual( res['OK'], True )
-#     res = res['Value']
-#     self.assertAlmostEqual( path in res['Successful'], True )
-#     print res
-
-  def atestputGetFolder( self ):
-    ########## uploading directory #############
-    putDir = { '/lhcb/user/p/pgloor/Workflow/FolderA' : '/home/phi/dev/UnitTests/FolderA' , \
-          '/lhcb/user/p/pgloor/Workflow/FolderB' : '/home/phi/dev/UnitTests/FolderB' }
-    listDir = ['/lhcb/user/p/pgloor/Workflow', \
-               '/lhcb/user/p/pgloor/Workflow/FolderA', \
-               '/lhcb/user/p/pgloor/Workflow/FolderB']
-    getDir = [ '/lhcb/user/p/pgloor/Workflow/FolderA', \
-               '/lhcb/user/p/pgloor/Workflow/FolderB']
-    res = self.tbt.putDirectory( putDir )
-    self.assertEqual( res['OK'], True )
-    res = self.tbt.listDirectory( listDir )
-    print res
-    #self.assertEqual( '/lhcb/user/p/pgloor/Workflow/FolderA/FileA' in \
-    #              res['Value']['Successful']['/lhcb/user/p/pgloor/Workflow/FolderA']['Files'].keys(), True )
-    #self.assertEqual( '/lhcb/user/p/pgloor/Workflow/FolderB/FileB' in \
-    #                  res['Value']['Successful']['/lhcb/user/p/pgloor/Workflow/FolderB']['Files'].keys(), True )
-
-    res = self.tbt.getDirectory( getDir, '/home/phi/dev/UnitTests/getDir' )
-    print res
 
   def testWorkflow( self ):
     putDir = { '/lhcb/user/p/pgloor/Workflow/FolderA' : '/home/phi/dev/UnitTests/FolderA' , \
           '/lhcb/user/p/pgloor/Workflow/FolderB' : '/home/phi/dev/UnitTests/FolderB' }
 
-    createDir = ['/lhcb/user/p/pgloor/Workflow/FolderA/FolderAA']
+    createDir = ['/lhcb/user/p/pgloor/Workflow/FolderA/FolderAA' , '/lhcb/user/p/pgloor/Workflow/FolderA/FolderABA', \
+                 '/lhcb/user/p/pgloor/Workflow/FolderA/FolderAAB' ]
 
     putFile = { '/lhcb/user/p/pgloor/Workflow/FolderA/File1' : '/home/phi/dev/UnitTests/File1' , \
                 '/lhcb/user/p/pgloor/Workflow/FolderAA/File1': '/home/phi/dev/UnitTest/File1' , \
@@ -128,6 +53,8 @@ class basicTest( unittest.TestCase ):
     self.assertEqual( res['OK'], True )
     res = res['Value']
     self.assertEqual( res['Successful'][createDir[0]], True )
+    self.assertEqual( res['Successful'][createDir[1]], True )
+    self.assertEqual( res['Successful'][createDir[2]], True )
 
     ######## putFile ########
     res = self.tbt.putFile( putFile )
