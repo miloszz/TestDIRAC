@@ -88,7 +88,7 @@ class SRM2V2Test( basicTest ):
 
   def setUp( self ):
     basicTest.setUp( self )
-    self.tbt = StorageElement( self.storageName, protocols = 'SRM2V2' )
+    self.tbt = StorageElement( self.storageName, protocols = 'GFAL2_SRM2' )
 
 
 class XROOTTest( basicTest ):
