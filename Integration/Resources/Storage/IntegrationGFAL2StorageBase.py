@@ -1,3 +1,22 @@
+"""
+This tests the new plugins for rel-v6r13: GFAL2_SRM2Storage and GFAL2_XROOTStorage.
+
+Plugins:
+
+To run the test following plugins are needed:
+
+gfal2-2.8.1-1
+gfal2-plugin-xrootd-0.2.2-2
+gfal2-python-1.6.0-1
+Storage element:
+
+Change self.storageName within the basicTest class to the name of the storageElement you wish to run this test against.
+This storage element needs to be supporting two access protocols, using the protocolName GFAL2_SRM2 and GFAL2_XROOT
+respectively. If you want to test only either SRM2 or XROOT remove the other testsuite in the unittest.
+
+"""
+
+
 from DIRAC.Core.Base.Script import parseCommandLine
 from symbol import parameters
 parseCommandLine()
