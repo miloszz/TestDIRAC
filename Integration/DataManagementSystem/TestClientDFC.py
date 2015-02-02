@@ -7,11 +7,15 @@
 import unittest
 
 
-from DIRAC.Resources.Catalog.FileCatalogClient import FileCatalogClient
 
 from DIRAC.Core.Base.Script import parseCommandLine
 parseCommandLine()
 
+from DIRAC.Resources.Catalog.FileCatalogClient import FileCatalogClient
+from DIRAC.Core.Security.Properties import FC_MANAGEMENT
+from DIRAC.Core.Security.ProxyInfo import getProxyInfo
+
+import sys
 
 seName = "mySE"
 testUser = 'atsareg'
@@ -22,6 +26,7 @@ nonExistingDir = "/I/Dont/exist/dir"
 testFile = '/vo.formation.idgrilles.fr/user/a/atsareg/testdir/testfile'
 nonExistingFile = "/I/Dont/exist"
 
+isAdmin = False
 
 class DFCTestCase(unittest.TestCase):
 
@@ -39,37 +44,66 @@ class DFCTestCase(unittest.TestCase):
 class UserGroupCase( DFCTestCase ):
 
   def test_userOperations( self ):
-    """Testing the user related operations"""
+    """Testing the user related operations
+       If you are an admin, you should be allowed to, if not, it should fail
+    """
 
+    expectedRes = None
+    if isAdmin:
+      print "Running UserTest in admin mode"
+      expectedRes = True
+    else:
+      print "Running UserTest in non admin mode"
+      expectedRes = False
+  
+    
     # Add the user
     result = self.dfc.addUser( testUser )
-    self.assert_( result['OK'], "AddUser failed when adding new user: %s" % result )
+    self.assertEqual( result['OK'], expectedRes, "AddUser failed when adding new user: %s" % result )
     # Add an existing user
     result = self.dfc.addUser( testUser )
-    self.assert_( result['OK'], "AddUser failed when adding existing user: %s" % result )
+    self.assertEqual( result['OK'], expectedRes, "AddUser failed when adding existing user: %s" % result )
     # Fetch the list of user
     result = self.dfc.getUsers()
-    self.assert_( result['OK'], "getUsers failed: %s" % result )
-    # Check if our user is present
-    self.assert_( testUser in result['Value'], "getUsers failed: %s" % result )
+    self.assertEqual( result['OK'], expectedRes, "getUsers failed: %s" % result )
+
+    if isAdmin:
+      # Check if our user is present
+      self.assert_( testUser in result['Value'], "getUsers failed: %s" % result )
+
     # remove the user we created
     result = self.dfc.deleteUser( testUser )
-    self.assert_( result['OK'], "deleteUser failed: %s" % result )
+    self.assertEqual( result['OK'], expectedRes, "deleteUser failed: %s" % result )
 
 
   def test_groupOperations( self ):
-    """Testing the group related operations"""
+    """Testing the group related operations
+           If you are an admin, you should be allowed to, if not, it should fail
+    """
+
+    expectedRes = None
+    if isAdmin:
+      print "Running UserTest in admin mode"
+      expectedRes = True
+    else:
+      print "Running UserTest in non admin mode"
+      expectedRes = False
 
     # Create new group
     result = self.dfc.addGroup( testGroup )
-    self.assert_( result['OK'], "AddGroup failed when adding new user: %s" % result )
+    self.assertEqual( result['OK'], expectedRes, "AddGroup failed when adding new user: %s" % result )
+
     result = self.dfc.addGroup( testGroup )
-    self.assert_( result['OK'], "AddGroup failed when adding existing user: %s" % result )
+    self.assertEqual( result['OK'], expectedRes, "AddGroup failed when adding existing user: %s" % result )
+
     result = self.dfc.getGroups()
-    self.assert_( result['OK'], "getGroups failed: %s" % result )
-    self.assert_( testGroup in result['Value'] )
+    self.assertEqual( result['OK'], expectedRes, "getGroups failed: %s" % result )
+
+    if isAdmin:
+      self.assert_( testGroup in result['Value'] )
+
     result = self.dfc.deleteGroup( testGroup )
-    self.assert_( result['OK'], "deleteGroup failed: %s" % result )
+    self.assertEqual( result['OK'], expectedRes, "deleteGroup failed: %s" % result )
 
 
 
@@ -355,6 +389,17 @@ class DirectoryCase( DFCTestCase ):
 
 if __name__ == '__main__':
 
+  res = getProxyInfo()
+  if not res['OK']:
+    print res['Message']
+    sys.exit( 1 )
+
+  res = res['Value']
+  properties = res.get( 'properties', [] )
+  properties.extend( res.get( 'groupProperties', [] ) )
+
+  isAdmin = FC_MANAGEMENT in properties 
+  print "Running test with admin privileges : ", isAdmin
 
   suite = unittest.defaultTestLoader.loadTestsFromTestCase( UserGroupCase )
   suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( FileCase ) )

@@ -66,6 +66,6 @@ for sct in ['Systems/DataManagement/Production/Services',
 
 localCfg.setOption( 'Systems/DataManagement/Production/Services/FileCatalog/DirectoryManager', 'DirectoryClosure' )
 localCfg.setOption( 'Systems/DataManagement/Production/Services/FileCatalog/FileManager', 'FileManagerPs' )
-localCfg.setOption( 'Systems/DataManagement/Production/Services/FileCatalog/SecurityManager', 'FullSecurityManager' )
+localCfg.setOption( 'Systems/DataManagement/Production/Services/FileCatalog/SecurityManager', 'DirectorySecurityManagerWithDelete' )
 
 localCfg.writeToFile( localConfigFile )
