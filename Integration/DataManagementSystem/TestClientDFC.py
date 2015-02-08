@@ -46,6 +46,9 @@ class UserGroupCase( DFCTestCase ):
   def test_userOperations( self ):
     """Testing the user related operations
        If you are an admin, you should be allowed to, if not, it should fail
+
+       CAUTION : THEY ARE DESIGNED FOR THE SecurityManager DirectorySecurityManagerWithDelete
+
     """
 
     expectedRes = None
@@ -79,6 +82,8 @@ class UserGroupCase( DFCTestCase ):
   def test_groupOperations( self ):
     """Testing the group related operations
            If you are an admin, you should be allowed to, if not, it should fail
+
+        CAUTION : THEY ARE DESIGNED FOR THE SecurityManager DirectorySecurityManagerWithDelete
     """
 
     expectedRes = None
@@ -119,19 +124,68 @@ class FileCase( DFCTestCase ):
     result = self.dfc.addFile( { testFile: { 'PFN': 'testfilePFN',
                                          'SE': 'testSE' ,
                                          'Size':123,
-                                         'GUID':1000,
+                                         'GUID':'1000',
                                          'Checksum':'0' } } )
     self.assert_( result['OK'], "addFile failed when adding new file %s" % result )
+
+
+    result = self.dfc.exists( testFile )
+    self.assert_( result['OK'] )
+    self.assertEqual( result['Value'].get( 'Successful', {} ).get( testFile ),
+                       testFile, "exists( testFile) should be the same lfn %s" % result )
+
+
+    result = self.dfc.exists( {testFile:'1000'} )
+    self.assert_( result['OK'] )
+    self.assertEqual( result['Value'].get( 'Successful', {} ).get( testFile ),
+                       testFile, "exists( testFile : 1000) should be the same lfn %s" % result )
+
+    result = self.dfc.exists( {testFile:{'GUID' : '1000', 'PFN' : 'blabla'}} )
+    self.assert_( result['OK'] )
+    self.assertEqual( result['Value'].get( 'Successful', {} ).get( testFile ),
+                       testFile, "exists( testFile : 1000) should be the same lfn %s" % result )
+
+    # In fact, we don't check if the GUID is correct...
+    result = self.dfc.exists( {testFile:'1001'} )
+    self.assert_( result['OK'] )
+    self.assertEqual( result['Value'].get( 'Successful', {} ).get( testFile ),
+                       testFile, "exists( testFile : 1001) should be the same lfn %s" % result )
+
+    result = self.dfc.exists( {testFile + '2' : '1000'} )
+    self.assert_( result['OK'] )
+    self.assertEqual( result['Value'].get( 'Successful', {} ).get( testFile + '2' ),
+                       testFile, "exists( testFile2 : 1000) should return testFile %s" % result )
+
 
 
     # Re-adding the same file
     result = self.dfc.addFile( { testFile: { 'PFN': 'testfilePFN',
                                          'SE': 'testSE' ,
                                          'Size':123,
-                                         'GUID':1000,
+                                         'GUID':'1000',
                                          'Checksum':'0' } } )
     self.assert_( result["OK"], "addFile failed when adding existing file %s" % result )
-    self.assert_( testFile in result["Value"]["Failed"], "addFile failed: it should not be possible to add an existing lfn %s" % result )
+    self.assert_( testFile in result["Value"]["Successful"], "addFile failed: it should  be possible to add an existing lfn with the same attributes %s" % result )
+
+  # Re-adding the same file
+    result = self.dfc.addFile( { testFile: { 'PFN': 'testfilePFN',
+                                         'SE': 'testSE' ,
+                                         'Size':123,
+                                         'GUID':'1000',
+                                         'Checksum':'1' } } )
+    self.assert_( result["OK"], "addFile failed when adding existing file %s" % result )
+    self.assert_( testFile in result["Value"]["Failed"], "addFile failed: it should not be possible to add an existing lfn with the different attributes %s" % result )
+
+
+    # Re-adding the different LFN but same GUID
+    result = self.dfc.addFile( { testFile + '2': { 'PFN': 'testfilePFN',
+                                         'SE': 'testSE' ,
+                                         'Size':123,
+                                         'GUID':'1000',
+                                         'Checksum':'0' } } )
+    self.assert_( result["OK"], "addFile failed when adding non existing file with existing GUID %s" % result )
+    self.assert_( testFile + '2' in result["Value"]["Failed"], "addFile failed: it should not be possible to add an existing GUID %s" % result )
+
 
     ##################################################################################
     # Setting existing status of existing file
@@ -205,7 +259,7 @@ class ReplicaCase( DFCTestCase ):
     result = self.dfc.addFile( { testFile: { 'PFN': 'testfile',
                                          'SE': 'testSE' ,
                                          'Size':123,
-                                         'GUID':1000,
+                                         'GUID':'1000',
                                          'Checksum':'0' } } )
     self.assert_( result['OK'], "addFile failed when adding new file %s" % result )
 
@@ -328,7 +382,7 @@ class DirectoryCase( DFCTestCase ):
     result = self.dfc.addFile( { testFile: { 'PFN': 'testfile',
                                          'SE': 'testSE' ,
                                          'Size':123,
-                                         'GUID':1000,
+                                         'GUID':'1000',
                                          'Checksum':'0' } } )
     self.assert_( result['OK'], "addFile failed when adding new file %s" % result )
 
