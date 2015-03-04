@@ -62,12 +62,17 @@ for sct in ['Systems/DataManagement',
             'Systems/DataManagement/Production/Databases/FileCatalogDB', ]:
   if not localCfg.existsKey( sct ):
     try:
-      localCfg.createNewSection( sct )
-    except KeyError:
-      continue
+      res = localCfg.createNewSection( sct )
+      print res
+    except KeyError, ke:
+      print ke
 
-localCfg.setOption( 'Systems/DataManagement/Production/Databases/FileCatalogDB/DBName', 'FileCatalogDB' )
-localCfg.setOption( 'Systems/DataManagement/Production/Databases/FileCatalogDB/Host', 'db-50098.cern.ch' )
-localCfg.setOption( 'Systems/DataManagement/Production/Databases/FileCatalogDB/Port', '5501' )
+res = localCfg.setOption( 'Systems/DataManagement/Production/Databases/FileCatalogDB/DBName', 'FileCatalogDB' )
+print res
+res = localCfg.setOption( 'Systems/DataManagement/Production/Databases/FileCatalogDB/Host', 'db-50098.cern.ch' )
+print res
+res = localCfg.setOption( 'Systems/DataManagement/Production/Databases/FileCatalogDB/Port', '5501' )
+print res
 
-localCfg.writeToFile( localConfigFile )
+res = localCfg.writeToFile( localConfigFile )
+print res
