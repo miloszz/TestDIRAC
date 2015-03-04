@@ -123,9 +123,8 @@ function fullInstallDIRAC(){
 	dropDBs
 	diracDBs
 
+	#fix the DBs (for the FileCatalog)
 	diracDFCDB
-	
-	#fix the DBs 
 	python $WORKSPACE/TestDIRAC/Jenkins/dirac-cfg-update-dbs.py $WORKSPACE $DEBUG
 	#refresh the configuration (gConfig dark side!)
 	sleep 10

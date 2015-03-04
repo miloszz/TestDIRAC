@@ -489,7 +489,7 @@ diracServices(){
 diracDBs(){
 	echo '[dumpDBs]'
 
-	dbs=`cat databases | cut -d ' ' -f 2 | cut -d '.' -f 1 | grep -v ^RequestDB`
+	dbs=`cat databases | cut -d ' ' -f 2 | cut -d '.' -f 1 | grep -v ^RequestDB | grep -v ^FileCatalogDB`
 	for db in $dbs
 	do
 		dirac-install-db $db $DEBUG
@@ -497,10 +497,11 @@ diracDBs(){
 
 }
 
-# Install manually the DFC
+# Drop, then Install manually the DFC
 diracDFCDB(){
 	echo '[diracDFCDB]'
 	
+	mysql -u$DB_ROOTUSER -p$DB_ROOTPWD -h$DB_HOST -P$DB_PORT -e "DROP DATABASE IF EXISTS FileCatalogDB;"
 	mysql -u$DB_ROOTUSER -p$DB_ROOTPWD -h$DB_HOST -P$DB_PORT  < $WORKSPACE/DIRAC/DataManagementSystem/DB/FileCatalogWithFkAndPsDB.sql
 }
 
@@ -509,9 +510,8 @@ diracDFCDB(){
 dropDBs(){
 	echo '[dropDBs]'
 	
-	dbs=`cat databases | cut -d ' ' -f 2 | cut -d '.' -f 1 | grep -v ^RequestDB`
+	dbs=`cat databases | cut -d ' ' -f 2 | cut -d '.' -f 1 | grep -v ^RequestDB | grep -v ^FileCatalogDB`
 	python $WORKSPACE/TestDIRAC/Jenkins/dirac-drop-db.py $dbs $DEBUG
-        mysql -u $DB_ROOTUSER -p $DB_ROOTPWD -h $DB_HOST -P $DB_PORT -e "DROP DATABASE FileCatalogDB;"
 
 }
 
