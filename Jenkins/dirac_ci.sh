@@ -128,9 +128,9 @@ function fullInstallDIRAC(){
 	python $WORKSPACE/TestDIRAC/Jenkins/dirac-cfg-update-dbs.py $WORKSPACE $DEBUG
 	#refresh the configuration (gConfig dark side!)
 	sleep 10
-	#diracRefreshCS
+	diracRefreshCS
 	sleep 10
-	#echo 'Restarting Configuration Server'
+	echo 'Restarting Configuration Server'
 	dirac-restart-component Configuration Server $DEBUG
 	sleep 30
 	
