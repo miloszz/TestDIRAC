@@ -59,7 +59,7 @@ localCfg.loadFromFile( localConfigFile )
 for sct in ['Systems/DataManagement',
             'Systems/DataManagement/Production',
             'Systems/DataManagement/Production/Databases',
-            'Systems/DataManagement/Production/Databases/FileCatalogDB', ]:
+            'Systems/DataManagement/Production/Databases/FileCatalogDB' ]:
   if not localCfg.existsKey( sct ):
     try:
       res = localCfg.createNewSection( sct )
