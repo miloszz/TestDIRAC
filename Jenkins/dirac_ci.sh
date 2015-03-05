@@ -163,9 +163,6 @@ function fullInstallDIRAC(){
 
 	dirac-restart-component DataManagement FileCatalog $DEBUG
 
-	#refresh the configuration (gConfig dark side!)
-	sleep 10
-	
 	#upload proxies
 	diracProxies
 	# prod
