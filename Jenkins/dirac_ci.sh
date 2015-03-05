@@ -126,13 +126,6 @@ function fullInstallDIRAC(){
 	#fix the DBs (for the FileCatalog)
 	diracDFCDB
 	python $WORKSPACE/TestDIRAC/Jenkins/dirac-cfg-update-dbs.py $WORKSPACE $DEBUG
-	#refresh the configuration (gConfig dark side!)
-	sleep 10
-	diracRefreshCS
-	sleep 10
-	echo 'Restarting Configuration Server'
-	dirac-restart-component Configuration Server $DEBUG
-	sleep 30
 	
 	#services (not looking for FrameworkSystem already installed)
 	#findServices 'exclude' 'FrameworkSystem'
@@ -141,26 +134,14 @@ function fullInstallDIRAC(){
 
 	#fix the services 
 	python $WORKSPACE/TestDIRAC/Jenkins/dirac-cfg-update-services.py $WORKSPACE $DEBUG
-	#refresh the configuration (gConfig dark side!)
-	sleep 10
-	diracRefreshCS
-	sleep 10
-	echo 'Restarting Configuration Server'
-	dirac-restart-component Configuration Server $DEBUG
-	sleep 30
 	
 	#fix the SandboxStore 
 	python $WORKSPACE/TestDIRAC/Jenkins/dirac-cfg-update-server.py $WORKSPACE $DEBUG
-	#refresh the configuration (gConfig dark side!)
-	sleep 10
-	diracRefreshCS
-	sleep 10
-	echo 'Restarting Configuration Server'
-	dirac-restart-component Configuration Server $DEBUG
-	sleep 30
+
 	echo 'Restarting WorkloadManagement SandboxStore'
 	dirac-restart-component WorkloadManagement SandboxStore $DEBUG
 
+	echo 'Restarting DataManagement FileCatalog'
 	dirac-restart-component DataManagement FileCatalog $DEBUG
 
 	#upload proxies
