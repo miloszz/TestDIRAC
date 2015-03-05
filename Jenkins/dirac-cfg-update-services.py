@@ -39,6 +39,8 @@ args = Script.getPositionalArgs()
 #   }
 # }
 
+from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
+csAPI = CSAPI()
 
 for sct in ['Systems/DataManagement/Production/Services',
             'Systems/DataManagement/Production/Services/FileCatalog' ]:
