@@ -13,6 +13,8 @@ Script.parseCommandLine()
 args = Script.getPositionalArgs()
 setupName = args[0]
 
+import os
+
 # Where to store outputs
 if not os.path.isdir( '%s/sandboxes' % setupName ):
   os.makedirs( '%s/sandboxes' % setupName )
