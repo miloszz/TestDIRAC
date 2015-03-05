@@ -16,16 +16,25 @@ from DIRAC import gLogger, S_OK, S_ERROR
 
 class TestClientComponentMonitoring( unittest.TestCase ):
   """
-  Contains methods for testing of separate elements
+  TestCase-inheriting class with setUp and tearDown methods
   """
 
   def setUp( self ):
+    """
+    Initialize the client on every test
+    """
     self.client = ComponentMonitoringClient()
 
   def tearDown( self ):
+    """
+    Nothing is done on termination
+    """
     pass
 
 class ComponentMonitoringClientChain( TestClientComponentMonitoring ):
+  """
+  Contains methods for testing of separate elements
+  """
 
   def testComponents( self ):
     """
