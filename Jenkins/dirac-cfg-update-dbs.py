@@ -6,29 +6,11 @@ from DIRAC.Core.Base import Script
 
 Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
                                      'Usage:',
-                                     '  %s [option|cfgFile] ... DB ...' % Script.scriptName,
-                                     'Arguments:',
-                                     '  setup: Name of the build setup (mandatory)'] ) )
+                                     '  %s [option|cfgFile] ' % Script.scriptName] ) )
 
 Script.parseCommandLine()
 
 args = Script.getPositionalArgs()
-
-if len( args ) < 1:
-  Script.showHelp()
-  exit( -1 )
-
-setupName = args[0]
-
-import os.path
-
-from DIRAC.Core.Utilities.CFG import CFG
-
-localCfg = CFG()
-
-# Which file
-localConfigFile = os.path.join( '.', 'etc', 'Production.cfg' )
-localCfg.loadFromFile( localConfigFile )
 
 # Setup the DFC
 #
@@ -55,24 +37,20 @@ localCfg.loadFromFile( localConfigFile )
 #   }
 # }
 
+from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
+csAPI = CSAPI()
 
 for sct in ['Systems/DataManagement',
             'Systems/DataManagement/Production',
             'Systems/DataManagement/Production/Databases',
             'Systems/DataManagement/Production/Databases/FileCatalogDB' ]:
-  if not localCfg.existsKey( sct ):
-    try:
-      res = localCfg.createNewSection( sct )
-      print res
-    except KeyError, ke:
-      print ke
+  res = csAPI.createSection( sct )
+  if not res['OK']:
+    print res['Message']
+    exit( 1 )
 
-res = localCfg.setOption( 'Systems/DataManagement/Production/Databases/FileCatalogDB/DBName', 'FileCatalogDB' )
-print res
-res = localCfg.setOption( 'Systems/DataManagement/Production/Databases/FileCatalogDB/Host', 'db-50098.cern.ch' )
-print res
-res = localCfg.setOption( 'Systems/DataManagement/Production/Databases/FileCatalogDB/Port', '5501' )
-print res
+csAPI.setOption( 'Systems/DataManagement/Production/Databases/FileCatalogDB/DBName', 'FileCatalogDB' )
+csAPI.setOption( 'Systems/DataManagement/Production/Databases/FileCatalogDB/Host', 'db-50098.cern.ch' )
+csAPI.setOption( 'Systems/DataManagement/Production/Databases/FileCatalogDB/Port', '5501' )
 
-res = localCfg.writeToFile( localConfigFile )
-print res
+csAPI.commit()
