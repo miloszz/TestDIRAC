@@ -29,7 +29,7 @@ class ReqClientTestCase( unittest.TestCase ):
   def setUp( self ):
     """ test case set up """
 
-    gLogger.setLevel( 'NOTICE' )
+    gLogger.setLevel( 'DEBUG' )
 
     self.file = File()
     self.file.LFN = "/lhcb/user/c/cibak/testFile"
@@ -79,9 +79,9 @@ class ReqDB( ReqClientTestCase ):
     self.assertEqual( "Request" in tableDict, True )
     self.assertEqual( "Operation" in tableDict, True )
     self.assertEqual( "File" in tableDict, True )
-    self.assertEqual( tableDict["Request"], Request.tableDesc() )
-    self.assertEqual( tableDict["Operation"], Operation.tableDesc() )
-    self.assertEqual( tableDict["File"], File.tableDesc() )
+#     self.assertEqual( tableDict["Request"], Request.tableDesc() )
+#     self.assertEqual( tableDict["Operation"], Operation.tableDesc() )
+#     self.assertEqual( tableDict["File"], File.tableDesc() )
 
     # # empty DB at that stage
     ret = RequestDB().getDBSummary()
@@ -95,6 +95,8 @@ class ReqClientMix( ReqClientTestCase ):
   def test_fullChain( self ):
     put = self.requestClient.putRequest( self.request )
     self.assert_( put['OK'] )
+    self.assertEqual( type( put['Value'] ), long )
+    reqID = put['Value']
 
     # # summary
     ret = RequestDB().getDBSummary()
@@ -104,7 +106,7 @@ class ReqClientMix( ReqClientTestCase ):
                                    'Request': { 'Waiting': 1L },
                                    'File': { 'Waiting': 2L} } } )
 
-    get = self.requestClient.getRequest( self.request.RequestName )
+    get = self.requestClient.getRequest( reqID )
     self.assert_( get['OK'] )
     self.assertEqual( isinstance( get['Value'], Request ), True )
     # # summary - the request became "Assigned"
@@ -116,30 +118,20 @@ class ReqClientMix( ReqClientTestCase ):
                                    'File': { 'Waiting': 2L} } } )
 
 
-    res = self.requestClient.getRequestInfo( self.request.RequestName )
-    self.assert_( res['OK'] )
-    res = self.requestClient.getRequestName( res['Value'][0] )
-    self.assert_( res['OK'] )
-    self.assertEqual( res['Value'], self.request.RequestName )
+    res = self.requestClient.getRequestInfo( reqID )
+    self.assertEqual( res['OK'], True, res['Message'] if 'Message' in res else 'OK' )
 
-    res = self.requestClient.getRequestFileStatus( self.request.RequestName, self.file.LFN )
-    self.assert_( res['OK'] )
+    res = self.requestClient.getRequestFileStatus( reqID, self.file.LFN )
+    self.assertEqual( res['OK'], True, res['Message'] if 'Message' in res else 'OK' )
 
-    res = self.requestClient.getRequestFileStatus( self.request.RequestName, [self.file.LFN] )
-    self.assert_( res['OK'] )
+    res = self.requestClient.getRequestFileStatus( reqID, [self.file.LFN] )
+    self.assertEqual( res['OK'], True, res['Message'] if 'Message' in res else 'OK' )
 
-    res = self.requestClient.getDigest( self.request.RequestName )
-    self.assert_( res['OK'] )
-
-    res = self.requestClient.getRequestNamesForJobs( [123] )
-    self.assert_( res['OK'] )
-    self.assertEqual( res['Value'], {'Successful': {123L:self.request.RequestName}, 'Failed': {}} )
-
-    res = self.requestClient.getRequestNamesList()
-    self.assert_( res['OK'] )
+    res = self.requestClient.getDigest( reqID )
+    self.assertEqual( res['OK'], True, res['Message'] if 'Message' in res else 'OK' )
 
     res = self.requestClient.readRequestsForJobs( [123] )
-    self.assert_( res['OK'] )
+    self.assertEqual( res['OK'], True, res['Message'] if 'Message' in res else 'OK' )
     self.assert_( isinstance( res['Value']['Successful'][123], Request ) )
 
     # Adding new request
@@ -152,7 +144,8 @@ class ReqClientMix( ReqClientTestCase ):
 
     # # update
     res = self.requestClient.putRequest( request2 )
-    self.assert_( res['OK'] )
+    self.assertEqual( res['OK'], True, res['Message'] if 'Message' in res else 'OK' )
+    reqID2 = res['Value']
 
     # # get summary again
     ret = RequestDB().getDBSummary()
@@ -163,10 +156,10 @@ class ReqClientMix( ReqClientTestCase ):
                                    'File': { 'Waiting': 4L} } } )
 
 
-    delete = self.requestClient.deleteRequest( self.request.RequestName )
-    self.assert_( delete['OK'] )
-    delete = self.requestClient.deleteRequest( request2.RequestName )
-    self.assert_( delete['OK'] )
+    delete = self.requestClient.deleteRequest( reqID )
+    self.assertEqual( delete['OK'], True, delete['Message'] if 'Message' in delete else 'OK' )
+    delete = self.requestClient.deleteRequest( reqID2 )
+    self.assertEqual( delete['OK'], True, delete['Message'] if 'Message' in delete else 'OK' )
 
     # # should be empty now
     ret = RequestDB().getDBSummary()
@@ -176,15 +169,12 @@ class ReqClientMix( ReqClientTestCase ):
 
 
 
-# FIXME: add the following:
-
-
   def test04Stress( self ):
     """ stress test """
 
     db = RequestDB()
 
-
+    reqIDs = []
     for i in range( self.stressRequests ):
       request = Request( { "RequestName": "test-%d" % i } )
       op = Operation( { "Type": "RemoveReplica", "TargetSE": "CERN-USER" } )
@@ -192,11 +182,12 @@ class ReqClientMix( ReqClientTestCase ):
       request += op
       put = db.putRequest( request )
       self.assertEqual( put["OK"], True, "put failed" )
+      reqIDs.append( put['Value'] )
 
     startTime = time.time()
 
-    for i in range( self.stressRequests ):
-      get = db.getRequest( "test-%s" % i, True )
+    for reqID in reqIDs:
+      get = db.getRequest( reqID )
       if "Message" in get:
         print get["Message"]
       self.assertEqual( get["OK"], True, "get failed" )
@@ -205,8 +196,8 @@ class ReqClientMix( ReqClientTestCase ):
 
     print "getRequest duration %s " % ( endTime - startTime )
 
-    for i in range( self.stressRequests ):
-      delete = db.deleteRequest( "test-%s" % i )
+    for reqID in reqIDs:
+      delete = db.deleteRequest( reqID )
       self.assertEqual( delete["OK"], True, "delete failed" )
 
 
@@ -215,6 +206,7 @@ class ReqClientMix( ReqClientTestCase ):
 
     db = RequestDB()
 
+    reqIDs = []
     for i in range( self.stressRequests ):
       request = Request( { "RequestName": "test-%d" % i } )
       op = Operation( { "Type": "RemoveReplica", "TargetSE": "CERN-USER" } )
@@ -222,6 +214,7 @@ class ReqClientMix( ReqClientTestCase ):
       request += op
       put = db.putRequest( request )
       self.assertEqual( put["OK"], True, "put failed" )
+      reqIDs.append( put['Value'] )
 
     loops = self.stressRequests // self.bulkRequest + ( 1 if ( self.stressRequests % self.bulkRequest ) else 0 )
     totalSuccessful = 0
@@ -240,10 +233,12 @@ class ReqClientMix( ReqClientTestCase ):
 
     print "getRequests duration %s " % ( endTime - startTime )
 
-    self.assertEqual( totalSuccessful, self.stressRequests, "Did not retrieve all the requests: %s instead of %s" % ( totalSuccessful, self.stressRequests ) )
+    self.assertEqual( totalSuccessful,
+                      self.stressRequests,
+                      "Did not retrieve all the requests: %s instead of %s" % ( totalSuccessful, self.stressRequests ) )
 
-    for i in range( self.stressRequests ):
-      delete = db.deleteRequest( "test-%s" % i )
+    for reqID in reqIDs:
+      delete = db.deleteRequest( reqID )
       self.assertEqual( delete["OK"], True, "delete failed" )
 #
 #

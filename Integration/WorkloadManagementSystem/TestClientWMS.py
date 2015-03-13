@@ -273,7 +273,7 @@ class JobMonitoringMore( TestWMSTestCase ):
 
     res = jobMonitor.getSites()
     self.assert_( res['OK'] )
-    self.assertEqual( set( res['Value'] ) <= set( dests + ['ANY', 'DIRAC.Jenkins.org'] ) )
+    self.assert_( set( res['Value'] ) <= set( dests + ['ANY', 'DIRAC.Jenkins.org'] ) )
     res = jobMonitor.getJobTypes()
     self.assert_( res['OK'] )
     self.assertEqual( sorted( res['Value'] ), sorted( types ) )
