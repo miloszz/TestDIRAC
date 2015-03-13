@@ -84,44 +84,44 @@ function installSite(){
 function fullInstallDIRAC(){
 	echo '[fullInstallDIRAC]'
 	
-	finalCleanup
-	
-	if [ ! -z "$DEBUG" ]
-	then
-		echo 'Running in DEBUG mode'
-		export DEBUG='-ddd'
-	fi  
-	
+finalCleanup
+
+if [ ! -z "$DEBUG" ]
+then
+	echo 'Running in DEBUG mode'
+	export DEBUG='-ddd'
+fi  
+
 	#basic install, with only the CS running 
-	installSite
-	
+installSite
+
 	#replace the sources with custom ones if defined
-	diracReplace
-	
+diracReplace
+
 	#Dealing with security stuff
-	generateUserCredentials
-	diracCredentials
-	
+generateUserCredentials
+diracCredentials
+
 	#just add a site
-	diracAddSite
-	
+diracAddSite
+
 	#Install the Framework
-	findDatabases 'FrameworkSystem'
-	dropDBs
-	diracDBs
-	findServices 'FrameworkSystem'
-	diracServices
-	
+findDatabases 'FrameworkSystem'
+dropDBs
+diracDBs
+findServices 'FrameworkSystem'
+diracServices
+
 	#create groups
-	diracUserAndGroup
-	
+diracUserAndGroup
+
 	#Now all the rest	
-	
+
 	#DBs (not looking for FrameworkSystem ones, already installed)
 	#findDatabases 'exclude' 'FrameworkSystem'
-	findDatabases 'exclude' 'FrameworkSystem'
-	dropDBs
-	diracDBs
+findDatabases 'exclude' 'FrameworkSystem'
+dropDBs
+diracDBs
 
 	#fix the DBs (for the FileCatalog)
 	diracDFCDB

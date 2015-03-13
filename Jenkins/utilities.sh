@@ -183,6 +183,34 @@ findServices(){
 	echo found `wc -l services`
 }
 
+findAgents(){
+	echo '[findAgents]'
+
+
+	if [ ! -z "$1" ]
+	then
+		ServicestoSearch=$1
+		if [ "$AgentstoSearch" = "exclude" ]
+		then
+			echo 'excluding ' $2
+			AgentstoExclude=$2
+			AgentstoSearch=' '
+		fi
+	else
+		AgentstoExclude='notExcluding'
+	fi
+
+	cd $WORKSPACE
+	if [ ! -z "$AgentstoExclude" ]
+	then 
+		find *DIRAC/*/Agent/ -name *Agent.py | grep -v test | awk -F "/" '{print $2,$4}' | grep -v $AgentstoExclude | sort | uniq > agents
+	else
+		find *DIRAC/*/Agent/ -name *Agent.py | grep -v test | awk -F "/" '{print $2,$4}' | grep $AgentstoSearch | sort | uniq > agents
+	fi
+
+	echo found `wc -l agents`
+}
+
 
 #-------------------------------------------------------------------------------
 # findExecutors:
