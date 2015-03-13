@@ -181,7 +181,7 @@ class ReqClientMix( ReqClientTestCase ):
       op += File( { "LFN": "/lhcb/user/c/cibak/foo" } )
       request += op
       put = db.putRequest( request )
-      self.assertEqual( put["OK"], True, "put failed" )
+      self.assertEqual( put["OK"], True, put['Message'] if 'Message' in put else 'OK' )
       reqIDs.append( put['Value'] )
 
     startTime = time.time()
@@ -190,7 +190,7 @@ class ReqClientMix( ReqClientTestCase ):
       get = db.getRequest( reqID )
       if "Message" in get:
         print get["Message"]
-      self.assertEqual( get["OK"], True, "get failed" )
+      self.assertEqual( get["OK"], True, get['Message'] if 'Message' in get else 'OK' )
 
     endTime = time.time()
 
@@ -198,7 +198,7 @@ class ReqClientMix( ReqClientTestCase ):
 
     for reqID in reqIDs:
       delete = db.deleteRequest( reqID )
-      self.assertEqual( delete["OK"], True, "delete failed" )
+      self.assertEqual( delete["OK"], True, delete['Message'] if 'Message' in delete else 'OK' )
 
 
   def test04StressBulk( self ):
@@ -239,86 +239,96 @@ class ReqClientMix( ReqClientTestCase ):
 
     for reqID in reqIDs:
       delete = db.deleteRequest( reqID )
-      self.assertEqual( delete["OK"], True, "delete failed" )
-#
-#
-#  def test05Scheduled( self ):
-#    """ scheduled request r/w """
-#
-#    db = RequestDB()
-#
-#    req = Request( {"RequestName": "FTSTest"} )
-#    op = Operation( { "Type": "ReplicateAndRegister", "TargetSE": "CERN-USER"} )
-#    op += File( {"LFN": "/a/b/c", "Status": "Scheduled", "Checksum": "123456", "ChecksumType": "ADLER32" } )
-#    req += op
-#
-#    put = db.putRequest( req )
-#    self.assertEqual( put["OK"], True, "putRequest failed" )
-#
-#    peek = db.peekRequest( req.RequestName )
-#    self.assertEqual( peek["OK"], True, "peek failed " )
-#
-#    peek = peek["Value"]
-#    for op in peek:
-#      opId = op.OperationID
-#
-#    getFTS = db.getScheduledRequest( opId )
-#    self.assertEqual( getFTS["OK"], True, "getScheduled failed" )
-#    self.assertEqual( getFTS["Value"].RequestName, "FTSTest", "wrong request selected" )
-#
-#
-#  def test06Dirty( self ):
-#    """ dirty records """
-#    db = RequestDB()
-#
-#    r = Request()
-#    r.RequestName = "dirty"
-#
-#    op1 = Operation( { "Type": "ReplicateAndRegister", "TargetSE": "CERN-USER"} )
-#    op1 += File( {"LFN": "/a/b/c/1", "Status": "Scheduled", "Checksum": "123456", "ChecksumType": "ADLER32" } )
-#
-#    op2 = Operation( { "Type": "ReplicateAndRegister", "TargetSE": "CERN-USER"} )
-#    op2 += File( {"LFN": "/a/b/c/2", "Status": "Scheduled", "Checksum": "123456", "ChecksumType": "ADLER32" } )
-#
-#    op3 = Operation( { "Type": "ReplicateAndRegister", "TargetSE": "CERN-USER"} )
-#    op3 += File( {"LFN": "/a/b/c/3", "Status": "Scheduled", "Checksum": "123456", "ChecksumType": "ADLER32" } )
-#
-#    r += op1
-#    r += op2
-#    r += op3
-#
-#    put = db.putRequest( r )
-#    self.assertEqual( put["OK"], True, "1. putRequest failed: %s" % put.get( "Message", "" ) )
-#
-#
-#    r = db.getRequest( "dirty" )
-#    self.assertEqual( r["OK"], True, "1. getRequest failed: %s" % r.get( "Message", "" ) )
-#    r = r["Value"]
-#
-#    del r[0]
-#    self.assertEqual( len( r ), 2, "1. len wrong" )
-#
-#    put = db.putRequest( r )
-#    self.assertEqual( put["OK"], True, "2. putRequest failed: %s" % put.get( "Message", "" ) )
-#
-#    r = db.getRequest( "dirty" )
-#    self.assertEqual( r["OK"], True, "2. getRequest failed: %s" % r.get( "Message", "" ) )
-#
-#    r = r["Value"]
-#    self.assertEqual( len( r ), 2, "2. len wrong" )
-#
-#    op4 = Operation( { "Type": "ReplicateAndRegister", "TargetSE": "CERN-USER"} )
-#    op4 += File( {"LFN": "/a/b/c/4", "Status": "Scheduled", "Checksum": "123456", "ChecksumType": "ADLER32" } )
-#
-#    r[0] = op4
-#    put = db.putRequest( r )
-#    self.assertEqual( put["OK"], True, "3. putRequest failed: %s" % put.get( "Message", "" ) )
-#
-#    r = db.getRequest( "dirty" )
-#    self.assertEqual( r["OK"], True, "3. getRequest failed: %s" % r.get( "Message", "" ) )
-#    r = r["Value"]
-#
-#    self.assertEqual( len( r ), 2, "3. len wrong" )
+      self.assertEqual( delete["OK"], True, delete['Message'] if 'Message' in delete else 'OK' )
+
+
+  def test05Scheduled( self ):
+    """ scheduled request r/w """
+
+    db = RequestDB()
+
+    req = Request( {"RequestName": "FTSTest"} )
+    op = Operation( { "Type": "ReplicateAndRegister", "TargetSE": "CERN-USER"} )
+    op += File( {"LFN": "/a/b/c", "Status": "Scheduled", "Checksum": "123456", "ChecksumType": "ADLER32" } )
+    req += op
+
+    put = db.putRequest( req )
+    self.assertEqual( put["OK"], True, put['Message'] if 'Message' in put else 'OK' )
+    reqID = put['Value']
+
+    peek = db.peekRequest( reqID )
+    self.assertEqual( peek["OK"], True, peek['Message'] if 'Message' in peek else 'OK' )
+
+    peek = peek["Value"]
+    for op in peek:
+      opId = op.OperationID
+
+    getFTS = db.getScheduledRequest( opId )
+    self.assertEqual( getFTS["OK"], True, "getScheduled failed" )
+    self.assertEqual( getFTS["Value"].RequestName, "FTSTest", "wrong request selected" )
+
+    delete = db.deleteRequest( reqID )
+    self.assertEqual( delete["OK"], True, delete['Message'] if 'Message' in delete else 'OK' )
+
+
+
+  def test06Dirty( self ):
+    """ dirty records """
+    db = RequestDB()
+
+    r = Request()
+    r.RequestName = "dirty"
+
+    op1 = Operation( { "Type": "ReplicateAndRegister", "TargetSE": "CERN-USER"} )
+    op1 += File( {"LFN": "/a/b/c/1", "Status": "Scheduled", "Checksum": "123456", "ChecksumType": "ADLER32" } )
+
+    op2 = Operation( { "Type": "ReplicateAndRegister", "TargetSE": "CERN-USER"} )
+    op2 += File( {"LFN": "/a/b/c/2", "Status": "Scheduled", "Checksum": "123456", "ChecksumType": "ADLER32" } )
+
+    op3 = Operation( { "Type": "ReplicateAndRegister", "TargetSE": "CERN-USER"} )
+    op3 += File( {"LFN": "/a/b/c/3", "Status": "Scheduled", "Checksum": "123456", "ChecksumType": "ADLER32" } )
+
+    r += op1
+    r += op2
+    r += op3
+
+    put = db.putRequest( r )
+    self.assertEqual( put["OK"], True, "1. putRequest failed: %s" % put.get( "Message", "" ) )
+    reqID = put['Value']
+
+    r = db.getRequest( reqID )
+    self.assertEqual( r["OK"], True, "1. getRequest failed: %s" % r.get( "Message", "" ) )
+    r = r["Value"]
+
+    del r[0]
+    self.assertEqual( len( r ), 2, "1. len wrong" )
+
+    put = db.putRequest( r )
+    self.assertEqual( put["OK"], True, "2. putRequest failed: %s" % put.get( "Message", "" ) )
+    reqID = put['Value']
+
+    r = db.getRequest( reqID )
+    self.assertEqual( r["OK"], True, "2. getRequest failed: %s" % r.get( "Message", "" ) )
+
+    r = r["Value"]
+    self.assertEqual( len( r ), 2, "2. len wrong" )
+
+    op4 = Operation( { "Type": "ReplicateAndRegister", "TargetSE": "CERN-USER"} )
+    op4 += File( {"LFN": "/a/b/c/4", "Status": "Scheduled", "Checksum": "123456", "ChecksumType": "ADLER32" } )
+
+    r[0] = op4
+    put = db.putRequest( r )
+    self.assertEqual( put["OK"], True, "3. putRequest failed: %s" % put.get( "Message", "" ) )
+    reqID = put['Value']
+
+    r = db.getRequest( reqID )
+    self.assertEqual( r["OK"], True, "3. getRequest failed: %s" % r.get( "Message", "" ) )
+    r = r["Value"]
+
+    self.assertEqual( len( r ), 2, "3. len wrong" )
+
+    delete = db.deleteRequest( reqID )
+    self.assertEqual( delete["OK"], True, delete['Message'] if 'Message' in delete else 'OK' )
 
 
 
