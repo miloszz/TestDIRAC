@@ -1,24 +1,24 @@
 """ This is a test of the chain
-    PilotAgentsClientClient -> PilotAgentsHandler -> PilotAgentsDB
+    PilotsLoggingClient -> PilotsLoggingHandler -> PilotsLoggingDB
 
     It supposes that the DB is present, and that the service is running
 """
 
 import unittest
-from DIRAC.WorkloadManagementSystem.Client.PilotAgentsClient import PilotAgentsClient
+from DIRAC.WorkloadManagementSystem.Client.PilotsLoggingClient import PilotsLoggingClient
 
-class TestPilotAgents( unittest.TestCase ):
-  
+class TestPilotsLogging( unittest.TestCase ):
+
   def setUp( self ):
-    self.pilotsLoggingClient = PilotAgentsClient()
-    
+    self.pilotsLoggingClient = PilotsLoggingClient()
+
   def tearDown( self ):
     pass
-  
-class PilotsLogging( TestPilotAgents ):
-  
+
+class PilotsLogging( TestPilotsLogging ):
+
   def test_PilotsLogging(self):
-    
+
     resp = self.pilotsLoggingClient.addPilotsLogging('11111111-1111-1111-1111-111111111111', 'status1', 'minorStatus1', 1427721819.0, 'test', 0)
     self.assert_(resp['OK'], 'Failed to add PilotsLogging')
     resp = self.pilotsLoggingClient.setPilotsUUIDtoIDMapping('11111111-1111-1111-1111-111111111111', 1)
@@ -39,9 +39,8 @@ class PilotsLogging( TestPilotAgents ):
     resp = self.pilotsLoggingClient.getPilotsLogging(1)
     self.assert_(resp['OK'], 'Failed to get PilotsLogging')
     self.assertEqual(resp['Value'], [], 'PilotsLogging was not really deleted')
-    
+
 if __name__ == '__main__':
-  suite = unittest.defaultTestLoader.loadTestsFromTestCase( TestPilotAgents )
+  suite = unittest.defaultTestLoader.loadTestsFromTestCase( TestPilotsLogging )
   suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( PilotsLogging ) )
   testResult = unittest.TextTestRunner( verbosity = 2 ).run( suite )
-  
